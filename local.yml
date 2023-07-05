@@ -1,0 +1,84 @@
+version: '3'
+
+volumes:
+  name_goes_here_local_postgres_data: {}
+  name_goes_here_local_postgres_data_backups: {}
+
+services:
+  django: &django
+    build:
+      context: .
+      dockerfile: ./compose/local/django/Dockerfile
+    image: name_goes_here_local_django
+    container_name: name_goes_here_local_django
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - .:/app:z
+    env_file:
+      - ./.envs/.local/.django
+      - ./.envs/.local/.postgres
+    ports:
+      - '8000:8000'
+    command: /start
+
+  postgres:
+    build:
+      context: .
+      dockerfile: ./compose/production/postgres/Dockerfile
+    image: name_goes_here_production_postgres
+    container_name: name_goes_here_local_postgres
+    volumes:
+      - name_goes_here_local_postgres_data:/var/lib/postgresql/data
+      - name_goes_here_local_postgres_data_backups:/backups
+    env_file:
+      - ./.envs/.local/.postgres
+
+  docs:
+    image: name_goes_here_local_docs
+    container_name: name_goes_here_local_docs
+    build:
+      context: .
+      dockerfile: ./compose/local/docs/Dockerfile
+    env_file:
+      - ./.envs/.local/.django
+    volumes:
+      - ./docs:/docs:z
+      - ./config:/app/config:z
+      - ./name_goes_here:/app/name_goes_here:z
+    ports:
+      - '9000:9000'
+    command: /start-docs
+
+  redis:
+    image: redis:6
+    container_name: name_goes_here_local_redis
+
+  celeryworker:
+    <<: *django
+    image: name_goes_here_local_celeryworker
+    container_name: name_goes_here_local_celeryworker
+    depends_on:
+      - redis
+      - postgres
+    ports: []
+    command: /start-celeryworker
+
+  celerybeat:
+    <<: *django
+    image: name_goes_here_local_celerybeat
+    container_name: name_goes_here_local_celerybeat
+    depends_on:
+      - redis
+      - postgres
+    ports: []
+    command: /start-celerybeat
+
+  flower:
+    <<: *django
+    image: name_goes_here_local_flower
+    container_name: name_goes_here_local_flower
+    ports:
+      - '5555:5555'
+    command: /start-flower
