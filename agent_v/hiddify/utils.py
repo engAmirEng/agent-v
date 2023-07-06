@@ -40,3 +40,24 @@ async def create_new_account(user, days: int, volume: int, comment: str):
         edit_url = pq(r.text)("a[title='ویرایش رکورد']").attr("href")
         id = urlparse(edit_url).query.split("&")[0].split("=")[1]
         _ = await HProfile.objects.new(user=user, _uuid=_uuid, id=id)
+
+
+async def charge_account(hiddi_id: int, days: int, volume: int, comment: str):
+    """Updates user in the hiddify panel"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        edit_user_url = get_hiddify_url(EDIT_USER.format(hiddi_id))
+        _uuid = str(uuid.uuid4())
+        r = await client.post(
+            edit_user_url,
+            data={
+                "usage_limit_GB": volume,
+                "package_days": days,
+                "mode": "no_reset",
+                "comment": comment,
+                "enable": True,
+                "reset_days": True,
+                "reset_usage": True,
+            },
+        )
+        if r.status_code != 302:
+            raise Exception(r.status_code)

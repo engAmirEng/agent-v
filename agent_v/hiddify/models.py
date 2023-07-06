@@ -15,6 +15,6 @@ class HProfileManager(models.Manager):
 class HProfile(models.Model):
     objects = HProfileManager()
 
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    hiddi_uuid = models.UUIDField()
-    hiddi_id = models.PositiveIntegerField()
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="user_hprofile")
+    hiddi_uuid = models.UUIDField(unique=True)
+    hiddi_id = models.PositiveIntegerField(unique=True)

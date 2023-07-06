@@ -4,7 +4,7 @@ from django.contrib.humanize.templatetags import humanize
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from agent_v.hiddify.utils import create_new_account
+from agent_v.hiddify.utils import charge_account, create_new_account
 from config import settings
 
 
@@ -53,10 +53,17 @@ class Payment(models.Model):
         """
         Delivers the payment
         """
-        payment = await cls.objects.select_related("user", "plan").aget(pk=pk)
-        await create_new_account(
-            user=payment.user,
-            days=timedelta(seconds=payment.plan.duration).days,
-            volume=payment.plan.volume,
-            comment=str(payment),
-        )
+        payment = await cls.objects.select_related("user__user_hprofile", "plan").aget(pk=pk)
+        hiddi_profile = payment.user.user_hprofile
+        days = timedelta(seconds=payment.plan.duration).days
+        volume = payment.plan.volume
+        comment = str(payment)
+        if not hiddi_profile:
+            await create_new_account(
+                user=payment.user,
+                days=days,
+                volume=volume,
+                comment=comment,
+            )
+            return
+        await charge_account(hiddi_id=hiddi_profile.hiddi_id, days=days, volume=volume, comment=comment)
