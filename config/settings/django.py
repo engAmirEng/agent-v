@@ -114,9 +114,9 @@ THIRD_PARTY_APPS = [
 ]
 
 LOCAL_APPS = [
+    "agent_v.seller",
     "agent_v.telebot",
     "agent_v.users",
-    # Your stuff: custom apps go here
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
