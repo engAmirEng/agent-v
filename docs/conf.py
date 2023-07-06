@@ -27,7 +27,7 @@ django.setup()
 
 # -- Project information -----------------------------------------------------
 
-project = "name_goes_here"
+project = "agent_v"
 copyright = """2023, author_name_goes_here"""
 author = "author_name_goes_here"
 

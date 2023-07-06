@@ -278,7 +278,7 @@ tags
 dump.rdb
 
 ### Project template
-name_goes_here/media/
+name_agent_v/media/
 
 .pytest_cache/
 .ipython/

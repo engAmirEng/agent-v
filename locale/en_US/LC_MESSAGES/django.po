@@ -1,4 +1,4 @@
-# Translations for the name_goes_here project
+# Translations for the agent_v project
 # Copyright (C) 2023 author_name_goes_here
 # author_name_goes_here <email_goes_here>, 2023.
 #

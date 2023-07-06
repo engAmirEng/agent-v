@@ -3,7 +3,7 @@ import django.contrib.auth.validators
 from django.db import migrations, models
 import django.utils.timezone
 
-import name_goes_here.users.models
+import agent_v.users.models
 
 
 class Migration(migrations.Migration):

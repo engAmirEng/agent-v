@@ -1,6 +1,6 @@
-# name_goes_here
+# agent_v
 
-description_goes_here
+This is my agent that is called V
 
 [![Built with Cookiecutter Django](https://img.shields.io/badge/built%20with-Cookiecutter%20Django-ff69b4.svg?logo=cookiecutter)](https://github.com/cookiecutter/cookiecutter-django/)
 [![Black code style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
@@ -27,7 +27,7 @@ For convenience, you can keep your normal user logged in on Chrome and your supe
 
 Running type checks with mypy:
 
-    $ mypy name_goes_here
+    $ mypy agent_v
 
 ### Test coverage
 
@@ -52,7 +52,7 @@ This app comes with Celery.
 To run a celery worker:
 
 ```bash
-cd name_goes_here
+cd agent_v
 celery -A config.celery_app worker -l info
 ```
 
@@ -61,14 +61,14 @@ Please note: For Celery's import magic to work, it is important _where_ the cele
 To run [periodic tasks](https://docs.celeryq.dev/en/stable/userguide/periodic-tasks.html), you'll need to start the celery beat scheduler service. You can start it as a standalone process:
 
 ```bash
-cd name_goes_here
+cd agent_v
 celery -A config.celery_app beat
 ```
 
 or you can embed the beat service inside a worker with the `-B` option (not recommended for production use):
 
 ```bash
-cd name_goes_here
+cd agent_v
 celery -A config.celery_app worker -B -l info
 ```
 

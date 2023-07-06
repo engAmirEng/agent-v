@@ -24,8 +24,8 @@ if __name__ == "__main__":
         raise
 
     # This allows easy placement of apps within the interior
-    # name_goes_here directory.
+    # agent_v directory.
     current_path = Path(__file__).parent.resolve()
-    sys.path.append(str(current_path / "name_goes_here"))
+    sys.path.append(str(current_path / "agent_v"))
 
     execute_from_command_line(sys.argv)

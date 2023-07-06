@@ -114,8 +114,8 @@ THIRD_PARTY_APPS = [
 ]
 
 LOCAL_APPS = [
-    "name_goes_here.telebot",
-    "name_goes_here.users",
+    "agent_v.telebot",
+    "agent_v.users",
     # Your stuff: custom apps go here
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
@@ -124,7 +124,7 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 # MIGRATIONS
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#migration-modules
-MIGRATION_MODULES = {"sites": "name_goes_here.contrib.sites.migrations"}
+MIGRATION_MODULES = {"sites": "agent_v.contrib.sites.migrations"}
 
 # AUTHENTICATION
 # ------------------------------------------------------------------------------
@@ -244,14 +244,14 @@ EMAIL_TIMEOUT = 5
 # https://docs.djangoproject.com/en/dev/ref/settings/#default-from-email
 DEFAULT_FROM_EMAIL = env(
     "DJANGO_DEFAULT_FROM_EMAIL",
-    default="name_goes_here <noreply@domain_name_goes_here>",
+    default="agent_v <noreply@domain_name_goes_here>",
 )
 # https://docs.djangoproject.com/en/dev/ref/settings/#server-email
 SERVER_EMAIL = env("DJANGO_SERVER_EMAIL", default=DEFAULT_FROM_EMAIL)
 # https://docs.djangoproject.com/en/dev/ref/settings/#email-subject-prefix
 EMAIL_SUBJECT_PREFIX = env(
     "DJANGO_EMAIL_SUBJECT_PREFIX",
-    default="[name_goes_here]",
+    default="[agent_v]",
 )
 
 # ADMIN

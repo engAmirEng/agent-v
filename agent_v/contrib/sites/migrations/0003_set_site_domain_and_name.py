@@ -41,7 +41,7 @@ def update_site_forward(apps, schema_editor):
         Site,
         schema_editor.connection,
         "domain_name_goes_here",
-        "name_goes_here",
+        "agent_v",
     )
 
 

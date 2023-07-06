@@ -1,9 +1,9 @@
-.. name_goes_here documentation master file, created by
+.. agent_v documentation master file, created by
    sphinx-quickstart.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to name_goes_here's documentation!
+Welcome to agent_v's documentation!
 ======================================================================
 
 .. toctree::

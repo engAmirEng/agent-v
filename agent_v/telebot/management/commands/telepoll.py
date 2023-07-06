@@ -2,7 +2,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from telegram.ext import ApplicationBuilder
 
-from name_goes_here.telebot.routes import routes
+from agent_v.telebot.routes import routes
 
 
 class Command(BaseCommand):

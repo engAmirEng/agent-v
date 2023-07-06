@@ -3,8 +3,8 @@ from pathlib import Path
 import environ
 
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent.parent
-# name_goes_here/
-APPS_DIR = BASE_DIR / "name_goes_here"
+# agent_v/
+APPS_DIR = BASE_DIR / "agent_v"
 env = environ.Env()
 
 READ_DOT_ENV_FILE = env.bool("DJANGO_READ_DOT_ENV_FILE", default=True)
