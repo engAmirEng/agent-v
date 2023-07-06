@@ -114,6 +114,7 @@ THIRD_PARTY_APPS = [
 ]
 
 LOCAL_APPS = [
+    "name_goes_here.telebot",
     "name_goes_here.users",
     # Your stuff: custom apps go here
 ]
