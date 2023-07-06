@@ -4,6 +4,7 @@ from django.contrib.humanize.templatetags import humanize
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from agent_v.hiddify.utils import create_new_account
 from config import settings
 
 
@@ -17,10 +18,13 @@ class Plan(models.Model):
 
     price = models.PositiveIntegerField(verbose_name=_("قیمت (تومان)"))
     duration = models.PositiveBigIntegerField(verbose_name=_("مدت (ثانیه)"))
+    volume = models.PositiveIntegerField(verbose_name=_("حجم (گیگابایت)"))
 
     @property
     def title(self):
-        return "{} روزه به قیمت {} تومان".format(timedelta(seconds=self.duration).days, humanize.intcomma(self.price))
+        return "{} گیگابایت {} روزه به قیمت {} تومان".format(
+            self.volume, timedelta(seconds=self.duration).days, humanize.intcomma(self.price)
+        )
 
 
 class PaymentManager(models.Manager):
@@ -43,3 +47,16 @@ class Payment(models.Model):
     plan = models.ForeignKey("Plan", on_delete=models.PROTECT, verbose_name=_("پلن"))
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, verbose_name=_("کاربر"))
     status = models.CharField(max_length=2, choices=Status.choices, verbose_name=_("وضعیت"))
+
+    @classmethod
+    async def deliver(cls, pk):
+        """
+        Delivers the payment
+        """
+        payment = await cls.objects.select_related("user", "plan").aget(pk=pk)
+        await create_new_account(
+            user=payment.user,
+            days=timedelta(seconds=payment.plan.duration).days,
+            volume=payment.plan.volume,
+            comment=str(payment),
+        )

@@ -114,6 +114,7 @@ THIRD_PARTY_APPS = [
 ]
 
 LOCAL_APPS = [
+    "agent_v.hiddify",
     "agent_v.seller",
     "agent_v.telebot",
     "agent_v.users",

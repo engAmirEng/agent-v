@@ -41,4 +41,9 @@ async def get_plan(update: Update, context: ContextTypes.DEFAULT_TYPE, /, user: 
 
 
 async def check_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    pass
+    query = update.callback_query
+    if True:
+        payment_id = query.data.split("/")[1]
+
+        await query.answer()
+        await Payment.deliver(payment_id)
