@@ -46,7 +46,6 @@ async def charge_account(hiddi_id: int, days: int, volume: int, comment: str):
     """Updates user in the hiddify panel"""
     async with httpx.AsyncClient(timeout=10) as client:
         edit_user_url = get_hiddify_url(EDIT_USER.format(hiddi_id))
-        _uuid = str(uuid.uuid4())
         r = await client.post(
             edit_user_url,
             data={
