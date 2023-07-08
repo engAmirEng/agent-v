@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from agent_v.seller.models import Payment, Plan
+from agent_v.seller.models import CardToCardGate, Payment, Plan
 
 
 @admin.register(Plan)
@@ -10,4 +10,9 @@ class PlanAdmin(admin.ModelAdmin):
 
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(CardToCardGate)
+class CardToCardGateAdmin(admin.ModelAdmin):
     pass

@@ -1,11 +1,16 @@
 from datetime import timedelta
 
+from django import forms
+from django.contrib.auth import get_user_model
 from django.contrib.humanize.templatetags import humanize
+from django.core.validators import MinLengthValidator, integer_validator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from agent_v.hiddify.utils import charge_account, create_new_account
 from config import settings
+
+User = get_user_model()
 
 
 class PlanManager(models.QuerySet):
@@ -35,6 +40,24 @@ class PaymentManager(models.Manager):
         payment.status = Payment.Status.PENDING
         await payment.asave()
         return payment
+
+    async def get_identified_rial_price(self, payment_pk):
+        """
+        Returns the price that the payment_id is appended to it in Rial
+        """
+        payment = await self.model.objects.select_related("plan").aget(pk=payment_pk)
+        pk = str(payment.pk)
+        rpk = pk[::-1]
+        rial = str(payment.plan.price)
+        rrial = rial[::-1]
+        rres = ""
+        for i, v in enumerate(rrial):
+            if i + 1 > len(pk):
+                rres += v
+                continue
+            rres += rpk[i]
+        res = rres[::-1]
+        return res + "0"
 
 
 class Payment(models.Model):
@@ -67,3 +90,32 @@ class Payment(models.Model):
             )
             return
         await charge_account(hiddi_id=hiddi_profile.hiddi_id, days=days, volume=volume, comment=comment)
+
+    async def get_related_ctc_gate(self) -> "CardToCardGate":
+        """
+        Returns the related card to cart gate for the payment
+        """
+        # TODO
+        return await CardToCardGate.objects.get_default()
+
+
+class CardToCardGateManager(models.Manager):
+    async def get_default(self):
+        return await self.afirst()
+
+
+class CardToCardGate(models.Model):
+    """
+    Admins to check the bank SMS
+    """
+    objects = CardToCardGateManager()
+
+    card_number = models.CharField(max_length=16, validators=[MinLengthValidator(16), integer_validator])
+    cart_info = models.CharField(max_length=255)
+    admin = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="user_ctcgates")
+
+    def clean(self) -> None:
+        try:
+            self.admin.user_botprofile
+        except User.user_botprofile.RelatedObjectDoesNotExist:
+            raise forms.ValidationError(_("این کاربر در بات پروفایل ندارد"))

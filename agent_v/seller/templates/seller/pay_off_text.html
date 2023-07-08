@@ -1,0 +1,8 @@
+{% load humanize seller %}
+لطفا مبلغ
+<b>{{ identified_price|intcomma }}</b>
+ریال را به شماره کارت
+<b>{{ ctc_gate.card_number|separate_card_digits }}</b>
+به نام <b>{{ ctc_gate.cart_info }}</b> واریز نمایید و سپس دکمه <u>{{ paid_buttom_txt }}</u> را فشار دهید
+
+<i>دقت کنید که دقیقا مبلغ مشخص شده را واریز نمایید چرا که شناسایی پرداخت شما از این طریق انجام میگیرد</i>
