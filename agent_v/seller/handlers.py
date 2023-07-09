@@ -12,6 +12,7 @@ from agent_v.hiddify.models import Platform
 from agent_v.seller.models import Payment, Plan
 from agent_v.telebot.models import Profile
 from agent_v.telebot.utils import require_user
+from agent_v.users.models import RepresentativeCode
 
 User = get_user_model()
 
@@ -53,15 +54,18 @@ async def validate_representative_code(update: Message, data, bot: AsyncTeleBot)
         "چند لحظه ...",
     )
     await asyncio.sleep(settings.VALIDATE_DELAY)  # to prevent brute force
-    if update.text != "5454":
+    is_valid, reason = await RepresentativeCode.objects.validate_code(update.text)
+    if not is_valid:
         await bot.edit_message_text(
-            "صحیح نیست",
+            f"با این کد امکان دسترسی ندارید، {reason}",
             chat_id=a_moment_message.chat.id,
             message_id=a_moment_message.message_id,
         )
         return
     await bot.delete_state(update.from_user.id, chat_id=update.chat.id)
-    _ = await Profile.objects.create_in_start_bot(username=update.from_user.username, bot_user_id=update.from_user.id)
+    _ = await Profile.objects.create_in_start_bot(
+        username=update.from_user.username, bot_user_id=update.from_user.id, repr_code=update.text
+    )
     plans = Plan.objects.get_basic()
     markup = InlineKeyboardMarkup()
     plans_buttons = [InlineKeyboardButton(i.title, callback_data=f"get_plan/{i.pk}") async for i in plans]

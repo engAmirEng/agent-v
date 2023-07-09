@@ -1,7 +1,11 @@
+from typing import Optional
+
 from asgiref.sync import async_to_sync, sync_to_async
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import models, transaction
+
+from agent_v.users.models import RepresentativeCode
 
 User = get_user_model()
 
@@ -9,7 +13,7 @@ User = get_user_model()
 class ProfileManager(models.Manager):
     @sync_to_async
     @transaction.atomic
-    def create_in_start_bot(self, username: str, bot_user_id: int):
+    def create_in_start_bot(self, username: str, bot_user_id: int, repr_code: Optional[str]):
         user = User()
         user.username = async_to_sync(self.generate_user_username)(username)
         user.save()
@@ -17,6 +21,8 @@ class ProfileManager(models.Manager):
         profile.user = user
         profile.bot_user_id = bot_user_id
         profile.save()
+        if repr_code:
+            async_to_sync(RepresentativeCode.objects.use_for)(repr_code, user)
         return profile
 
     @staticmethod

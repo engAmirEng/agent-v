@@ -1,6 +1,10 @@
+import enum
+
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import UserManager as BaseUserManager
-from django.db.models import CharField
+from django.db import models
+from django.db.models import CharField, Count
 from django.utils.translation import gettext_lazy as _
 
 
@@ -22,3 +26,51 @@ class User(AbstractUser):
     name = CharField(_("Name of User"), blank=True, max_length=255)
     first_name = None  # type: ignore
     last_name = None  # type: ignore
+
+
+class CODE_NOT_VALID_REASON(str, enum.Enum):
+    CAPACITY = "capacity"
+    NOT_FOUNT = "not_found"
+    DEACTIVATED = "deactivated"
+
+
+class RepresentativeCodeManager(models.Manager):
+    async def validate_code(self, code: str) -> (bool, CODE_NOT_VALID_REASON):
+        """
+        If a code can be used or not and why
+        """
+        try:
+            code_obj: RepresentativeCode = await self.aget(code=code)
+        except self.model.DoesNotExist:
+            return False, CODE_NOT_VALID_REASON.NOT_FOUNT.value
+        if not code_obj.is_active:
+            return False, CODE_NOT_VALID_REASON.DEACTIVATED.value
+        elif not await code_obj.has_capacity(code_obj.pk):
+            return False, CODE_NOT_VALID_REASON.CAPACITY.value
+        return True, None
+
+    async def use_for(self, code: str, user):
+        """
+        Mark a code as used for user
+        """
+        obj: RepresentativeCode = await self.aget(code=code)
+        await obj.used_by.aadd(user)
+        await obj.asave()
+
+
+class RepresentativeCode(models.Model):
+    objects = RepresentativeCodeManager()
+
+    code = models.CharField(max_length=15, unique=True)
+    capacity = models.PositiveSmallIntegerField(default=1)
+    used_by = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="user_rcodes", blank=True)
+    is_active = models.BooleanField(default=True)
+    descriptions = models.TextField()
+
+    @classmethod
+    async def has_capacity(cls, pk):
+        """
+        Left any capacity or not
+        """
+        obj = await cls.objects.annotate(used_by_count=Count("used_by")).aget(pk=pk)
+        return obj.capacity - obj.used_by_count > 0

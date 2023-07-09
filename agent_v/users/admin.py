@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 
 from agent_v.users.forms import UserAdminChangeForm, UserAdminCreationForm
+from agent_v.users.models import RepresentativeCode
 
 User = get_user_model()
 
@@ -31,3 +32,8 @@ class UserAdmin(auth_admin.UserAdmin):
     )
     list_display = ["username", "name", "is_superuser"]
     search_fields = ["name"]
+
+
+@admin.register(RepresentativeCode)
+class RepresentativeCodeAdmin(admin.ModelAdmin):
+    pass
