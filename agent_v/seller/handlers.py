@@ -1,11 +1,12 @@
 import asyncio
+import enum
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.template.loader import get_template
 from django.utils.translation import gettext as _
 from telebot.async_telebot import AsyncTeleBot
-from telebot.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
+from telebot.types import CallbackQuery, ForceReply, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from agent_v.hiddify.models import Platform
 from agent_v.seller.models import Payment, Plan
@@ -15,12 +16,25 @@ from agent_v.telebot.utils import require_user
 User = get_user_model()
 
 
+class STATES(str, enum.Enum):
+    ENTERING_REPRESENTATIVE_CODE = "entering_representative_code"
+
+
 @require_user
 async def start(update: Message, data, bot: AsyncTeleBot, /, user: User) -> None:
     if user.is_anonymous:
-        _ = await Profile.objects.create_in_start_bot(
-            username=update.from_user.username, bot_user_id=update.from_user.id
-        )
+        if settings.ALLOW_NEW_UNKNOWN:
+            _ = await Profile.objects.create_in_start_bot(
+                username=update.from_user.username, bot_user_id=update.from_user.id
+            )
+        else:
+            await bot.set_state(
+                update.from_user.id,
+                STATES.ENTERING_REPRESENTATIVE_CODE.value,
+                chat_id=update.chat.id,
+            )
+            await bot.send_message(update.chat.id, "لطفا کد معرف را وارد نمایید", reply_markup=ForceReply())
+            return
 
     plans = Plan.objects.get_basic()
     markup = InlineKeyboardMarkup()
@@ -29,6 +43,33 @@ async def start(update: Message, data, bot: AsyncTeleBot, /, user: User) -> None
     await bot.send_message(
         update.chat.id,
         "یکی از پلن ها را انتخاب نمایید",
+        reply_markup=markup,
+    )
+
+
+async def validate_representative_code(update: Message, data, bot: AsyncTeleBot):
+    a_moment_message = await bot.send_message(
+        update.chat.id,
+        "چند لحظه ...",
+    )
+    await asyncio.sleep(settings.VALIDATE_DELAY)  # to prevent brute force
+    if update.text != "5454":
+        await bot.edit_message_text(
+            "صحیح نیست",
+            chat_id=a_moment_message.chat.id,
+            message_id=a_moment_message.message_id,
+        )
+        return
+    await bot.delete_state(update.from_user.id, chat_id=update.chat.id)
+    _ = await Profile.objects.create_in_start_bot(username=update.from_user.username, bot_user_id=update.from_user.id)
+    plans = Plan.objects.get_basic()
+    markup = InlineKeyboardMarkup()
+    plans_buttons = [InlineKeyboardButton(i.title, callback_data=f"get_plan/{i.pk}") async for i in plans]
+    markup.add(*plans_buttons, row_width=1)
+    await bot.edit_message_text(
+        "یکی از پلن ها را انتخاب نمایید",
+        chat_id=a_moment_message.chat.id,
+        message_id=a_moment_message.message_id,
         reply_markup=markup,
     )
 

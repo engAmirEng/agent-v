@@ -17,3 +17,9 @@ HIDDIFY_AGENT_UUID = env.str("HIDDIFY_AGENT_UUID")
 V2RAY_N_DLL = env.str("V2RAY_N_DLL")
 V2RAY_NG_DLL = env.str("V2RAY_NG_DLL")
 FAIR_VPN_DLL = env.str("FAIR_VPN_DLL")
+ALLOW_NEW_UNKNOWN = env.bool("ALLOW_NEW_UNKNOWN", False)
+VALIDATE_DELAY = env.int("VALIDATE_DELAY", 5)
+
+# telebot
+# ------------------------------------------------------------------------------
+REDIS_STATE_STORAGE_URL = env.str("REDIS_URL")
