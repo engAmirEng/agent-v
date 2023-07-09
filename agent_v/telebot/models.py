@@ -1,4 +1,4 @@
-from asgiref.sync import sync_to_async
+from asgiref.sync import sync_to_async, async_to_sync
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import models, transaction
@@ -11,13 +11,19 @@ class ProfileManager(models.Manager):
     @transaction.atomic
     def create_in_start_bot(self, username: str, bot_user_id: int):
         user = User()
-        user.username = username
+        user.username = async_to_sync(self.generate_user_username)(username)
         user.save()
         profile = self.model()
         profile.user = user
         profile.bot_user_id = bot_user_id
         profile.save()
         return profile
+
+    @staticmethod
+    async def generate_user_username(preferred_user_name):
+        last_user = await User.objects.order_by("id").alast()
+        last_user_id = last_user.id if last_user else 0
+        return f"{preferred_user_name}#{last_user_id+1}"
 
 
 class Profile(models.Model):
