@@ -15,7 +15,7 @@ User = get_user_model()
 
 class PlanManager(models.QuerySet):
     def get_basic(self):
-        return self.all()
+        return self.filter(is_active=True)
 
 
 class Plan(models.Model):
@@ -24,6 +24,7 @@ class Plan(models.Model):
     price = models.PositiveIntegerField(verbose_name=_("قیمت (تومان)"))
     duration = models.PositiveBigIntegerField(verbose_name=_("مدت (ثانیه)"))
     volume = models.PositiveIntegerField(verbose_name=_("حجم (گیگابایت)"))
+    is_active = models.BooleanField(default=True)
 
     @property
     def title(self):
