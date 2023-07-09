@@ -41,10 +41,12 @@ async def start(update: Message, data, bot: AsyncTeleBot, /, user: User) -> None
     markup = InlineKeyboardMarkup()
     plans_buttons = [InlineKeyboardButton(i.title, callback_data=f"get_plan/{i.pk}") async for i in plans]
     markup.add(*plans_buttons, row_width=1)
+    text = get_template("seller/choose_plan_text.html").render()
     await bot.send_message(
         update.chat.id,
-        "یکی از پلن ها را انتخاب نمایید",
+        text,
         reply_markup=markup,
+        parse_mode="html",
     )
 
 
@@ -70,11 +72,13 @@ async def validate_representative_code(update: Message, data, bot: AsyncTeleBot)
     markup = InlineKeyboardMarkup()
     plans_buttons = [InlineKeyboardButton(i.title, callback_data=f"get_plan/{i.pk}") async for i in plans]
     markup.add(*plans_buttons, row_width=1)
+    text = get_template("seller/choose_plan_text.html").render()
     await bot.edit_message_text(
-        "یکی از پلن ها را انتخاب نمایید",
+        text,
         chat_id=a_moment_message.chat.id,
         message_id=a_moment_message.message_id,
         reply_markup=markup,
+        parse_mode="html",
     )
 
 
