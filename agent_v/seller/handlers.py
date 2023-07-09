@@ -1,11 +1,13 @@
 import asyncio
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.template.loader import get_template
 from django.utils.translation import gettext as _
 from telebot.async_telebot import AsyncTeleBot
 from telebot.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
+from agent_v.hiddify.models import Platform
 from agent_v.seller.models import Payment, Plan
 from agent_v.telebot.models import Profile
 from agent_v.telebot.utils import require_user
@@ -100,11 +102,25 @@ async def deliver_payment(update: CallbackQuery, data, bot: AsyncTeleBot, /, use
     The callback when admin sees the sms
     """
     payment_id = update.data.split("/")[1]
-    payment = await Payment.objects.select_related("user__user_botprofile").aget(pk=payment_id)
+    payment = await Payment.objects.select_related("user__user_botprofile", "user__user_hprofile", "plan").aget(
+        pk=payment_id
+    )
     ctc_gate = await payment.get_related_ctc_gate()
     assert ctc_gate.admin_id == user.pk
     await Payment.deliver(payment_id)
-    await bot.send_message(chat_id=payment.user.user_botprofile.bot_user_id, text="این تحویل شما")
+    url_getter = payment.user.user_hprofile.get_subscriptions_url
+    text = get_template("seller/deliver_text.html").render(
+        {
+            "v2rayN": url_getter(Platform.V2RAY_N),
+            "V2RAY_N_DLL": settings.V2RAY_N_DLL,
+            "v2rayNG": url_getter(Platform.V2RAY_NG),
+            "V2RAY_NG_DLL": settings.V2RAY_NG_DLL,
+            "FairVPN": url_getter(Platform.FAIR_VPN),
+            "FAIR_VPN_DLL": settings.FAIR_VPN_DLL,
+            "plan_title": payment.plan.title,
+        }
+    )
+    await bot.send_message(chat_id=payment.user.user_botprofile.bot_user_id, text=text, parse_mode="html")
     await bot.edit_message_text("اوکی شد", chat_id=update.message.chat.id, message_id=update.message.message_id)
 
 

@@ -108,6 +108,7 @@ class CardToCardGate(models.Model):
     """
     Admins to check the bank SMS
     """
+
     objects = CardToCardGateManager()
 
     card_number = models.CharField(max_length=16, validators=[MinLengthValidator(16), integer_validator])
