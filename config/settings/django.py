@@ -9,7 +9,7 @@ SECRET_KEY = env(
     default="N9aST1hTjVmGTOAz8MDyIyGYX0iBdYGb7XZcS7nE8gYKu78qFTtlSxwx9IeHlPF1",
 )
 # https://docs.djangoproject.com/en/dev/ref/settings/#allowed-hosts
-ALLOWED_HOSTS = ["localhost", "0.0.0.0", "127.0.0.1"]
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "0.0.0.0", "127.0.0.1"])
 INTERNAL_IPS = ["127.0.0.1", "10.0.2.2"]
 if env("USE_DOCKER") == "yes":
     import socket
