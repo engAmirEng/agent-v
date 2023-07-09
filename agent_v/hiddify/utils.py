@@ -33,7 +33,7 @@ async def create_new_account(user, days: int, volume: int, comment: str):
                 "comment": comment,
                 "enable": True,
             },
-            allow_redirects=False
+            allow_redirects=False,
         ) as r:
             if r.status != 302:
                 raise Exception(r.status)
@@ -59,7 +59,7 @@ async def charge_account(hiddi_id: int, days: int, volume: int, comment: str):
                 "reset_days": True,
                 "reset_usage": True,
             },
-            allow_redirects=False
+            allow_redirects=False,
         ) as r:
             if r.status != 302:
                 raise Exception(r.status)
