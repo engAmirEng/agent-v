@@ -72,24 +72,27 @@ class Payment(models.Model):
     status = models.CharField(max_length=2, choices=Status.choices, verbose_name=_("وضعیت"))
 
     @classmethod
-    async def deliver(cls, pk):
+    async def deliver(cls, pk) -> bool:
         """
         Delivers the payment
         """
         payment = await cls.objects.select_related("user__user_hprofile", "plan").aget(pk=pk)
-        hiddi_profile = payment.user.user_hprofile
         days = timedelta(seconds=payment.plan.duration).days
         volume = payment.plan.volume
         comment = str(payment)
-        if not hiddi_profile:
+        try:
+            hiddi_profile = payment.user.user_hprofile
+        except User.user_hprofile.RelatedObjectDoesNotExist:
             await create_new_account(
                 user=payment.user,
                 days=days,
                 volume=volume,
                 comment=comment,
             )
-            return
-        await charge_account(hiddi_id=hiddi_profile.hiddi_id, days=days, volume=volume, comment=comment)
+            return True
+        else:
+            await charge_account(hiddi_id=hiddi_profile.hiddi_id, days=days, volume=volume, comment=comment)
+            return False
 
     async def get_related_ctc_gate(self) -> "CardToCardGate":
         """

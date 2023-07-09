@@ -107,7 +107,11 @@ async def deliver_payment(update: CallbackQuery, data, bot: AsyncTeleBot, /, use
     )
     ctc_gate = await payment.get_related_ctc_gate()
     assert ctc_gate.admin_id == user.pk
-    await Payment.deliver(payment_id)
+    is_new_created = await Payment.deliver(payment_id)
+    if is_new_created:
+        payment = await Payment.objects.select_related("user__user_botprofile", "user__user_hprofile", "plan").aget(
+            pk=payment_id
+        )
     url_getter = payment.user.user_hprofile.get_subscriptions_url
     text = get_template("seller/deliver_text.html").render(
         {
