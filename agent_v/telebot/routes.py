@@ -4,6 +4,7 @@ from typing import Union
 from telebot.async_telebot import AsyncTeleBot
 from telebot.types import CallbackQuery, Message
 
+from agent_v.hiddify.handlers import profile
 from agent_v.seller.handlers import (
     STATES,
     check_payment,
@@ -25,6 +26,7 @@ def regex_match(pattern: str):
 
 def routes(tb: AsyncTeleBot):
     tb.message_handler(commands=["start"])(start),
+    tb.message_handler(commands=["profile"])(profile),
     tb.message_handler(state=STATES.ENTERING_REPRESENTATIVE_CODE.value)(validate_representative_code),
     tb.callback_query_handler(regex_match(r"get_plan/(\d+)"))(get_plan),
     tb.callback_query_handler(regex_match(r"check_payment/(\d+)"))(check_payment),

@@ -5,6 +5,9 @@
 #   * Make sure each ForeignKey and OneToOneField has `on_delete` set to the desired behavior
 #   * Remove `managed = False` lines if you wish to allow Django to create, modify, and delete the table
 # Feel free to rename the models, but don't rename db_table values or field names.
+from datetime import date, timedelta
+from decimal import Decimal
+
 from django.db import models
 
 
@@ -128,7 +131,7 @@ class StrConfig(models.Model):
         db_table = "str_config"
 
 
-class User(models.Model):
+class HiddiUser(models.Model):
     uuid = models.CharField()
     name = models.CharField()
     last_online = models.DateTimeField()
@@ -154,9 +157,15 @@ class User(models.Model):
         managed = False
         db_table = "user"
 
+    def get_remained_data(self) -> Decimal:
+        return Decimal(self.usage_limit_gb) - Decimal(self.current_usage_gb)
+
+    def get_expiry_time(self) -> date:
+        return self.start_date + timedelta(days=self.package_days)
+
 
 class UserDetail(models.Model):
-    user = models.ForeignKey(User, models.DO_NOTHING)
+    user = models.ForeignKey(HiddiUser, models.DO_NOTHING)
     child = models.ForeignKey(Child, models.DO_NOTHING)
     last_online = models.DateTimeField()
     current_usage_gb = models.TextField(
