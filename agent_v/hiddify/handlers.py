@@ -10,8 +10,12 @@ from .models import HiddiUser, HProfile
 
 async def profile(update: Message, data: DataType, bot: AsyncTeleBot) -> None:
     user = data["user"]
-    h_profile = await HProfile.objects.aget(user=user)
-    hiddi_user = await HiddiUser.objects.using("hiddi").aget(uuid=str(h_profile.uuid))
+    try:
+        h_profile = await HProfile.objects.aget(user=user)
+    except HProfile.DoesNotExist:
+        await bot.send_message(update.chat.id, "شما هنوز خریدی از بات انجام نداده اید")
+    hiddi_user = await HiddiUser.objects.using("hiddi").aget(uuid=str(h_profile.hiddi_uuid))
+
     remained_data = hiddi_user.get_remained_data()
     expiry_time = jdatetime.date.fromgregorian(date=hiddi_user.get_expiry_time())
 
