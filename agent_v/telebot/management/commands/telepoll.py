@@ -7,6 +7,7 @@ from django.core.management.base import BaseCommand
 from telebot import asyncio_helper
 from telebot.async_telebot import AsyncTeleBot
 from telebot.asyncio_filters import StateFilter
+from telebot.types import BotCommand
 
 from agent_v.telebot.routes import routes
 from agent_v.telebot.utils import UserMiddleware
@@ -52,4 +53,9 @@ class Command(BaseCommand):
         routes(tb)
         self.stdout.write(self.style.SUCCESS("Successfully started to poll ..."))
         set_async_tb(tb)
-        asyncio.run(tb.infinity_polling())
+
+        async def run():
+            await tb.set_my_commands(commands=[BotCommand("start", "منو"), BotCommand("profile", "حجم و تاریخ انقضا")])
+            await tb.infinity_polling()
+
+        asyncio.run(run())
