@@ -122,27 +122,8 @@ async def check_payment(update: CallbackQuery, data: DataType, bot: AsyncTeleBot
     """
     payment_id = update.data.split("/")[1]
     payment = await Payment.objects.aget(pk=payment_id)
-    ctc_gate_task = payment.get_related_ctc_gate()
-    identified_price_task = Payment.objects.get_identified_rial_price(payment.pk)
-    ctc_gate, identified_price = await asyncio.gather(ctc_gate_task, identified_price_task)
-    text = get_template("seller/request_admin_check_text.html").render(
-        {"user_username": update.from_user.username, "identified_price": identified_price}
-    )
-    admin_profile = await Profile.objects.aget(user__user_ctcgates__pk=ctc_gate.pk)
-    admin_chat_id = admin_profile.bot_user_id
-    keyboard = [
-        [
-            InlineKeyboardButton(_("آره"), callback_data=f"deliver_payment/{payment.pk}"),
-            InlineKeyboardButton(_("نه"), callback_data=f"dont_deliver_payment_yet/{payment.pk}"),
-        ]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await bot.send_message(chat_id=admin_chat_id, text=text, parse_mode="html", reply_markup=reply_markup)
-    await bot.edit_message_text(
-        "منتظر بمانید تا تراکنش شما توسط ادمین تایید شود",
-        chat_id=update.message.chat.id,
-        message_id=update.message.message_id,
-    )
+    await sync_to_async(payment.pend_admin)(update.message)
+    await payment.asave()
 
 
 async def deliver_payment(update: CallbackQuery, data: DataType, bot: AsyncTeleBot):

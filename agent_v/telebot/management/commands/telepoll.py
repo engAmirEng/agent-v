@@ -34,6 +34,29 @@ def set_sync_tb(tb: TeleBot):
     _sync_tb = tb
 
 
+_async_tb = None
+
+
+def async_tb() -> AsyncTeleBot:
+    """
+    Use only to just send messages
+    """
+    global _async_tb
+    if _async_tb is None:
+        raise ImproperlyConfigured("_async_tb is not populated.")
+    return _async_tb
+
+
+def set_async_tb(tb: AsyncTeleBot):
+    """
+    Call it only once
+    """
+    global _async_tb
+    if _async_tb is not None:
+        raise ImproperlyConfigured("_async_tb already populated.")
+    _async_tb = tb
+
+
 class Command(BaseCommand):
     help = "Start telegram bot with polling"
 
@@ -58,4 +81,5 @@ class Command(BaseCommand):
         tb.middlewares.append(UserMiddleware())
         routes(tb)
         self.stdout.write(self.style.SUCCESS("Successfully started to poll ..."))
+        set_async_tb(tb)
         asyncio.run(tb.infinity_polling())

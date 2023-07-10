@@ -1,13 +1,19 @@
 from datetime import timedelta
 
+from asgiref.sync import async_to_sync
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.humanize.templatetags import humanize
 from django.core.validators import MinLengthValidator, integer_validator
 from django.db import models
+from django.template.loader import get_template
+from django.utils.translation import gettext as __
 from django.utils.translation import gettext_lazy as _
+from django_fsm import FSMField, transition
+from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from agent_v.hiddify.utils import charge_account, create_new_account
+from agent_v.telebot.models import Profile
 from config import settings
 
 User = get_user_model()
@@ -66,11 +72,13 @@ class Payment(models.Model):
 
     class Status(models.TextChoices):
         PENDING = "PE", _("انتظار برای پرداخت")
+        PENDING_ADMIN = "PEA", _("انتظار برای تایید ادمین")
+        ADMIN_REJECTED = "AR", _("رد توسط ادمین")
         DONE = "DO", _("انجام شده")
 
     plan = models.ForeignKey("Plan", on_delete=models.PROTECT, verbose_name=_("پلن"))
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, verbose_name=_("کاربر"))
-    status = models.CharField(max_length=2, choices=Status.choices, verbose_name=_("وضعیت"))
+    status = FSMField(max_length=4, choices=Status.choices, verbose_name=_("وضعیت"))
 
     @classmethod
     async def deliver(cls, pk) -> bool:
@@ -94,6 +102,37 @@ class Payment(models.Model):
         else:
             await charge_account(hiddi_id=hiddi_profile.hiddi_id, days=days, volume=volume, comment=comment)
             return False
+
+    @transition(field=status, source=[Status.PENDING], target=Status.PENDING_ADMIN.value)
+    def pend_admin(self, user_message: Message):
+        """
+        Contains side effects like notifying users, etc.
+        The return value will be discarded.
+        """
+        from agent_v.telebot.management.commands.telepoll import async_tb
+
+        bot = async_tb()
+
+        ctc_gate = async_to_sync(self.get_related_ctc_gate)()
+        identified_price = async_to_sync(Payment.objects.get_identified_rial_price)(self.pk)
+        text = get_template("seller/request_admin_check_text.html").render(
+            {"user_username": user_message.from_user.username, "identified_price": identified_price}
+        )
+        admin_profile = Profile.objects.get(user__user_ctcgates__pk=ctc_gate.pk)
+        admin_chat_id = admin_profile.bot_user_id
+        keyboard = [
+            [
+                InlineKeyboardButton(__("آره"), callback_data=f"deliver_payment/{self.pk}"),
+                InlineKeyboardButton(__("نه"), callback_data=f"dont_deliver_payment_yet/{self.pk}"),
+            ]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        async_to_sync(bot.send_message)(chat_id=admin_chat_id, text=text, parse_mode="html", reply_markup=reply_markup)
+        async_to_sync(bot.edit_message_text)(
+            __("منتظر بمانید تا تراکنش شما توسط ادمین تایید شود"),
+            chat_id=user_message.chat.id,
+            message_id=user_message.message_id,
+        )
 
     async def get_related_ctc_gate(self) -> "CardToCardGate":
         """
