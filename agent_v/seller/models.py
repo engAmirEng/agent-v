@@ -10,8 +10,9 @@ from django.template.loader import get_template
 from django.utils.translation import gettext as __
 from django.utils.translation import gettext_lazy as _
 from django_fsm import FSMField, transition
-from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
+from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 
+from agent_v.hiddify.models import Platform
 from agent_v.hiddify.utils import charge_account, create_new_account
 from agent_v.telebot.models import Profile
 from config import settings
@@ -104,7 +105,7 @@ class Payment(models.Model):
             return False
 
     @transition(field=status, source=[Status.PENDING], target=Status.PENDING_ADMIN.value)
-    def pend_admin(self, user_message: Message):
+    def pend_admin(self, user_bot_username: str, user_chat_id: int, user_message_id: int):
         """
         Contains side effects like notifying users, etc.
         The return value will be discarded.
@@ -116,7 +117,7 @@ class Payment(models.Model):
         ctc_gate = async_to_sync(self.get_related_ctc_gate)()
         identified_price = async_to_sync(Payment.objects.get_identified_rial_price)(self.pk)
         text = get_template("seller/request_admin_check_text.html").render(
-            {"user_username": user_message.from_user.username, "identified_price": identified_price}
+            {"user_username": user_bot_username, "identified_price": identified_price}
         )
         admin_profile = Profile.objects.get(user__user_ctcgates__pk=ctc_gate.pk)
         admin_chat_id = admin_profile.bot_user_id
@@ -130,8 +131,56 @@ class Payment(models.Model):
         async_to_sync(bot.send_message)(chat_id=admin_chat_id, text=text, parse_mode="html", reply_markup=reply_markup)
         async_to_sync(bot.edit_message_text)(
             __("منتظر بمانید تا تراکنش شما توسط ادمین تایید شود"),
-            chat_id=user_message.chat.id,
-            message_id=user_message.message_id,
+            chat_id=user_chat_id,
+            message_id=user_message_id,
+        )
+
+    @transition(field=status, source=[Status.PENDING_ADMIN, Status.ADMIN_REJECTED], target=Status.DONE.value)
+    def set_done(self, user, user_chat_id: int, user_message_id: int):
+        from agent_v.telebot.management.commands.telepoll import async_tb
+
+        bot = async_tb()
+
+        ctc_gate = async_to_sync(self.get_related_ctc_gate)()
+        assert ctc_gate.admin_id == user.pk
+        async_to_sync(Payment.deliver)(self.pk)
+        full_fetched_self = Payment.objects.select_related("user__user_botprofile", "user__user_hprofile", "plan").get(
+            pk=self.pk
+        )
+        url_getter = full_fetched_self.user.user_hprofile.get_subscriptions_url
+        text = get_template("seller/deliver_text.html").render(
+            {
+                "v2rayN": url_getter(Platform.V2RAY_N),
+                "V2RAY_N_DLL": settings.V2RAY_N_DLL,
+                "v2rayNG": url_getter(Platform.V2RAY_NG),
+                "V2RAY_NG_DLL": settings.V2RAY_NG_DLL,
+                "FairVPN": url_getter(Platform.FAIR_VPN),
+                "FAIR_VPN_DLL": settings.FAIR_VPN_DLL,
+                "plan_title": full_fetched_self.plan.title,
+            }
+        )
+        async_to_sync(bot.send_message)(
+            chat_id=full_fetched_self.user.user_botprofile.bot_user_id, text=text, parse_mode="html"
+        )
+        async_to_sync(bot.edit_message_text)("اوکی شد", chat_id=user_chat_id, message_id=user_message_id)
+
+    @transition(field=status, source=[Status.PENDING_ADMIN], target=Status.ADMIN_REJECTED.value)
+    def reject_by_admin(self, user, user_chat_id: int, user_message_id: int):
+        from agent_v.telebot.management.commands.telepoll import async_tb
+
+        bot = async_tb()
+
+        ctc_gate = async_to_sync(self.get_related_ctc_gate)()
+        assert ctc_gate.admin_id == user.pk
+        async_to_sync(bot.send_message)(chat_id=self.user.user_botprofile.bot_user_id, text="ما که پولی ندیدیم")
+        keyboard = [
+            [
+                InlineKeyboardButton(__("اوا، الان اومد"), callback_data=f"deliver_payment/{self.pk}"),
+            ]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        async_to_sync(bot.edit_message_text)(
+            "بش گفتم", chat_id=user_chat_id, message_id=user_message_id, reply_markup=reply_markup
         )
 
     async def get_related_ctc_gate(self) -> "CardToCardGate":

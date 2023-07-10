@@ -1,6 +1,7 @@
 import asyncio
 import enum
 
+from asgiref.sync import sync_to_async
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.template.loader import get_template
@@ -8,7 +9,6 @@ from django.utils.translation import gettext as _
 from telebot.async_telebot import AsyncTeleBot
 from telebot.types import CallbackQuery, ForceReply, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
-from agent_v.hiddify.models import Platform
 from agent_v.seller.models import Payment, Plan
 from agent_v.telebot.models import Profile
 from agent_v.telebot.utils import DataType
@@ -122,7 +122,9 @@ async def check_payment(update: CallbackQuery, data: DataType, bot: AsyncTeleBot
     """
     payment_id = update.data.split("/")[1]
     payment = await Payment.objects.aget(pk=payment_id)
-    await sync_to_async(payment.pend_admin)(update.message)
+    await sync_to_async(payment.pend_admin)(
+        update.from_user.username, user_chat_id=update.message.chat.id, user_message_id=update.message.message_id
+    )
     await payment.asave()
 
 
@@ -132,30 +134,11 @@ async def deliver_payment(update: CallbackQuery, data: DataType, bot: AsyncTeleB
     """
     user = data["user"]
     payment_id = update.data.split("/")[1]
-    payment = await Payment.objects.select_related("user__user_botprofile", "user__user_hprofile", "plan").aget(
-        pk=payment_id
+    payment = await Payment.objects.aget(pk=payment_id)
+    await sync_to_async(payment.set_done)(
+        user, user_chat_id=update.message.chat.id, user_message_id=update.message.message_id
     )
-    ctc_gate = await payment.get_related_ctc_gate()
-    assert ctc_gate.admin_id == user.pk
-    is_new_created = await Payment.deliver(payment_id)
-    if is_new_created:
-        payment = await Payment.objects.select_related("user__user_botprofile", "user__user_hprofile", "plan").aget(
-            pk=payment_id
-        )
-    url_getter = payment.user.user_hprofile.get_subscriptions_url
-    text = get_template("seller/deliver_text.html").render(
-        {
-            "v2rayN": url_getter(Platform.V2RAY_N),
-            "V2RAY_N_DLL": settings.V2RAY_N_DLL,
-            "v2rayNG": url_getter(Platform.V2RAY_NG),
-            "V2RAY_NG_DLL": settings.V2RAY_NG_DLL,
-            "FairVPN": url_getter(Platform.FAIR_VPN),
-            "FAIR_VPN_DLL": settings.FAIR_VPN_DLL,
-            "plan_title": payment.plan.title,
-        }
-    )
-    await bot.send_message(chat_id=payment.user.user_botprofile.bot_user_id, text=text, parse_mode="html")
-    await bot.edit_message_text("اوکی شد", chat_id=update.message.chat.id, message_id=update.message.message_id)
+    await payment.asave()
 
 
 async def dont_deliver_payment_yet(update: CallbackQuery, data: DataType, bot: AsyncTeleBot):
@@ -164,16 +147,8 @@ async def dont_deliver_payment_yet(update: CallbackQuery, data: DataType, bot: A
     """
     user = data["user"]
     payment_id = update.data.split("/")[1]
-    payment = await Payment.objects.select_related("user__user_botprofile").aget(pk=payment_id)
-    ctc_gate = await payment.get_related_ctc_gate()
-    assert ctc_gate.admin_id == user.pk
-    await bot.send_message(chat_id=payment.user.user_botprofile.bot_user_id, text="ما که پولی ندیدیم")
-    keyboard = [
-        [
-            InlineKeyboardButton(_("اوا، الان اومد"), callback_data=f"deliver_payment/{payment.pk}"),
-        ]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await bot.edit_message_text(
-        "بش گفتم", chat_id=update.message.chat.id, message_id=update.message.message_id, reply_markup=reply_markup
+    payment = await Payment.objects.aget(pk=payment_id)
+    await sync_to_async(payment.reject_by_admin)(
+        user, user_chat_id=update.message.chat.id, user_message_id=update.message.message_id
     )
+    await payment.asave()
