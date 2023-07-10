@@ -288,7 +288,13 @@ LOGGING = {
             "level": "DEBUG",
             "class": "logging.StreamHandler",
             "formatter": "verbose",
-        }
+        },
+        "file": {
+            "level": "WARNING",
+            "class": "logging.FileHandler",
+            "filename": "agent_v.log",
+            "formatter": "verbose",
+        },
     },
-    "root": {"level": "INFO", "handlers": ["console"]},
+    "root": {"level": "DEBUG", "handlers": ["console", "file"]},
 }
