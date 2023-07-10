@@ -11,7 +11,7 @@ from telebot.types import CallbackQuery, ForceReply, InlineKeyboardButton, Inlin
 from agent_v.hiddify.models import Platform
 from agent_v.seller.models import Payment, Plan
 from agent_v.telebot.models import Profile
-from agent_v.telebot.utils import require_user
+from agent_v.telebot.utils import DataType
 from agent_v.users.models import RepresentativeCode
 
 User = get_user_model()
@@ -21,8 +21,8 @@ class STATES(str, enum.Enum):
     ENTERING_REPRESENTATIVE_CODE = "entering_representative_code"
 
 
-@require_user
-async def start(update: Message, data, bot: AsyncTeleBot, /, user: User) -> None:
+async def start(update: Message, data: DataType, bot: AsyncTeleBot) -> None:
+    user = data["user"]
     if user.is_anonymous:
         if settings.ALLOW_NEW_UNKNOWN:
             _ = await Profile.objects.create_in_start_bot(
@@ -50,7 +50,7 @@ async def start(update: Message, data, bot: AsyncTeleBot, /, user: User) -> None
     )
 
 
-async def validate_representative_code(update: Message, data, bot: AsyncTeleBot):
+async def validate_representative_code(update: Message, data: DataType, bot: AsyncTeleBot):
     a_moment_message = await bot.send_message(
         update.chat.id,
         "چند لحظه ...",
@@ -82,9 +82,9 @@ async def validate_representative_code(update: Message, data, bot: AsyncTeleBot)
     )
 
 
-@require_user
-async def get_plan(update: CallbackQuery, data, bot: AsyncTeleBot, /, user: User):
+async def get_plan(update: CallbackQuery, data: DataType, bot: AsyncTeleBot):
     """Attempt to acquire the desired plan"""
+    user = data["user"]
     plan_id = update.data.split("/")[1]
     plan = await Plan.objects.get_basic().filter(pk=plan_id).aget()
     payment = await Payment.objects.new_from_bot(plan=plan, user=user)
@@ -116,7 +116,7 @@ async def get_plan(update: CallbackQuery, data, bot: AsyncTeleBot, /, user: User
     )
 
 
-async def check_payment(update: CallbackQuery, data, bot: AsyncTeleBot):
+async def check_payment(update: CallbackQuery, data: DataType, bot: AsyncTeleBot):
     """
     The callback in which user says they paid the payment
     """
@@ -145,11 +145,11 @@ async def check_payment(update: CallbackQuery, data, bot: AsyncTeleBot):
     )
 
 
-@require_user
-async def deliver_payment(update: CallbackQuery, data, bot: AsyncTeleBot, /, user: User):
+async def deliver_payment(update: CallbackQuery, data: DataType, bot: AsyncTeleBot):
     """
     The callback when admin sees the sms
     """
+    user = data["user"]
     payment_id = update.data.split("/")[1]
     payment = await Payment.objects.select_related("user__user_botprofile", "user__user_hprofile", "plan").aget(
         pk=payment_id
@@ -177,11 +177,11 @@ async def deliver_payment(update: CallbackQuery, data, bot: AsyncTeleBot, /, use
     await bot.edit_message_text("اوکی شد", chat_id=update.message.chat.id, message_id=update.message.message_id)
 
 
-@require_user
-async def dont_deliver_payment_yet(update: CallbackQuery, data, bot: AsyncTeleBot, /, user: User):
+async def dont_deliver_payment_yet(update: CallbackQuery, data: DataType, bot: AsyncTeleBot):
     """
     The callback when admin does not see the sms
     """
+    user = data["user"]
     payment_id = update.data.split("/")[1]
     payment = await Payment.objects.select_related("user__user_botprofile").aget(pk=payment_id)
     ctc_gate = await payment.get_related_ctc_gate()
