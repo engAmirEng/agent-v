@@ -14,6 +14,7 @@ async def profile(update: Message, data: DataType, bot: AsyncTeleBot) -> None:
         h_profile = await HProfile.objects.aget(user=user)
     except HProfile.DoesNotExist:
         await bot.send_message(update.chat.id, "شما هنوز خریدی از بات انجام نداده اید")
+        return
     hiddi_user = await HiddiUser.objects.using("hiddi").aget(uuid=str(h_profile.hiddi_uuid))
 
     remained_data = hiddi_user.get_remained_data()
