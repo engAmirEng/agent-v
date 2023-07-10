@@ -295,6 +295,12 @@ LOGGING = {
             "filename": "agent_v.log",
             "formatter": "verbose",
         },
+        "admin_telebot": {
+            "level": "ERROR",
+            "class": "agent_v.telebot.log.AdminTelebotHandler",
+            "admin_chat_id": env.int("ADMIN_CHAT_ID", 0),
+            "formatter": "verbose",
+        },
     },
-    "root": {"level": "DEBUG", "handlers": ["console", "file"]},
+    "root": {"level": "DEBUG", "handlers": ["console", "file", "admin_telebot"]},
 }
