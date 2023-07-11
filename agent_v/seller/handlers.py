@@ -7,35 +7,47 @@ from django.contrib.auth import get_user_model
 from django.template.loader import get_template
 from django.utils.translation import gettext as _
 from telebot.async_telebot import AsyncTeleBot
-from telebot.types import CallbackQuery, ForceReply, InlineKeyboardButton, InlineKeyboardMarkup, Message
+from telebot.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from agent_v.seller.models import Payment, Plan
 from agent_v.telebot.models import Profile
-from agent_v.telebot.utils import DataType
+from agent_v.telebot.utils import DataType, get_data_from_command
 from agent_v.users.models import RepresentativeCode
 
 User = get_user_model()
 
 
 class STATES(str, enum.Enum):
-    ENTERING_REPRESENTATIVE_CODE = "entering_representative_code"
+    pass
 
 
 async def start(update: Message, data: DataType, bot: AsyncTeleBot) -> None:
     user = data["user"]
     if user.is_anonymous:
         if settings.ALLOW_NEW_UNKNOWN:
-            _ = await Profile.objects.create_in_start_bot(
+            await Profile.objects.create_in_start_bot(
                 username=update.from_user.username, bot_user_id=update.from_user.id
             )
         else:
-            await bot.set_state(
-                update.from_user.id,
-                STATES.ENTERING_REPRESENTATIVE_CODE.value,
-                chat_id=update.chat.id,
+            code = get_data_from_command(update.text, "start").get("code", None)
+            if code is None:
+                await bot.send_message(update.chat.id, _("برای عضویت نیاز به لینک عضویت میباشد"))
+                return
+            await bot.send_message(
+                update.chat.id,
+                "چند لحظه ...",
             )
-            await bot.send_message(update.chat.id, "لطفا کد معرف را وارد نمایید", reply_markup=ForceReply())
-            return
+            await asyncio.sleep(settings.VALIDATE_DELAY)  # to prevent brute force
+            is_valid, reason = await RepresentativeCode.objects.validate_code(code)
+            if not is_valid:
+                await bot.send_message(
+                    chat_id=update.chat.id,
+                    text=f"با این لینک امکان دسترسی ندارید، {reason}",
+                )
+                return
+            await Profile.objects.create_in_start_bot(
+                username=update.from_user.username, bot_user_id=update.from_user.id, repr_code=code
+            )
 
     plans = Plan.objects.get_basic()
     markup = InlineKeyboardMarkup()
@@ -45,38 +57,6 @@ async def start(update: Message, data: DataType, bot: AsyncTeleBot) -> None:
     await bot.send_message(
         update.chat.id,
         text,
-        reply_markup=markup,
-        parse_mode="html",
-    )
-
-
-async def validate_representative_code(update: Message, data: DataType, bot: AsyncTeleBot):
-    a_moment_message = await bot.send_message(
-        update.chat.id,
-        "چند لحظه ...",
-    )
-    await asyncio.sleep(settings.VALIDATE_DELAY)  # to prevent brute force
-    is_valid, reason = await RepresentativeCode.objects.validate_code(update.text)
-    if not is_valid:
-        await bot.edit_message_text(
-            f"با این کد امکان دسترسی ندارید، {reason}",
-            chat_id=a_moment_message.chat.id,
-            message_id=a_moment_message.message_id,
-        )
-        return
-    await bot.delete_state(update.from_user.id, chat_id=update.chat.id)
-    _ = await Profile.objects.create_in_start_bot(
-        username=update.from_user.username, bot_user_id=update.from_user.id, repr_code=update.text
-    )
-    plans = Plan.objects.get_basic()
-    markup = InlineKeyboardMarkup()
-    plans_buttons = [InlineKeyboardButton(i.title, callback_data=f"get_plan/{i.pk}") async for i in plans]
-    markup.add(*plans_buttons, row_width=1)
-    text = get_template("seller/choose_plan_text.html").render()
-    await bot.edit_message_text(
-        text,
-        chat_id=a_moment_message.chat.id,
-        message_id=a_moment_message.message_id,
         reply_markup=markup,
         parse_mode="html",
     )

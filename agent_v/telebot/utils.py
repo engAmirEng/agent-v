@@ -2,6 +2,7 @@ from typing import TypedDict, Union
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
+from django.http import QueryDict
 from telebot.async_telebot import AsyncTeleBot
 from telebot.asyncio_handler_backends import BaseMiddleware
 from telebot.types import CallbackQuery, Message
@@ -45,3 +46,10 @@ class UserMiddleware(BaseMiddleware):
 
 class DataType(TypedDict):
     user: User
+
+
+def get_data_from_command(text: str, command: str):
+    if len(text.split(" ")) < 2:
+        return QueryDict()
+    data_qs = text.split(" ")[1]
+    return QueryDict(data_qs)
