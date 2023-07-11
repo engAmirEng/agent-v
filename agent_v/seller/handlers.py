@@ -49,7 +49,7 @@ async def start(update: Message, data: DataType, bot: AsyncTeleBot) -> None:
                 username=update.from_user.username, bot_user_id=update.from_user.id, repr_code=code
             )
 
-    plans = Plan.objects.get_basic()
+    plans = await Plan.objects.get_for_user(user=user)
     markup = InlineKeyboardMarkup()
     plans_buttons = [InlineKeyboardButton(i.title, callback_data=f"get_plan/{i.pk}") async for i in plans]
     markup.add(*plans_buttons, row_width=1)
@@ -66,7 +66,8 @@ async def get_plan(update: CallbackQuery, data: DataType, bot: AsyncTeleBot):
     """Attempt to acquire the desired plan"""
     user = data["user"]
     plan_id = update.data.split("/")[1]
-    plan = await Plan.objects.get_basic().filter(pk=plan_id).aget()
+    plans = await Plan.objects.get_for_user(user=user)
+    plan = await plans.filter(pk=plan_id).aget()
     payment = await Payment.objects.new_from_bot(plan=plan, user=user)
     identified_price_task = Payment.objects.get_identified_rial_price(payment.pk)
     ctc_gate_task = payment.get_related_ctc_gate()

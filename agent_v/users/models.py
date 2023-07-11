@@ -7,6 +7,8 @@ from django.db import models
 from django.db.models import CharField, Count
 from django.utils.translation import gettext_lazy as _
 
+from agent_v.seller.utils import PlanType
+
 
 class UserManager(BaseUserManager):
     async def get_by_user_bot_id(self, user_bot_id: int):
@@ -63,6 +65,7 @@ class RepresentativeCode(models.Model):
 
     code = models.CharField(max_length=15, unique=True)
     capacity = models.PositiveSmallIntegerField(default=1)
+    plan_type = models.CharField(max_length=15, choices=PlanType.choices, default=PlanType.DEFAULT)
     used_by = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="user_rcodes", blank=True)
     is_active = models.BooleanField(default=True)
     descriptions = models.TextField()

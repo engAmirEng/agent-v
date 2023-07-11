@@ -14,6 +14,7 @@ from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from agent_v.hiddify.models import Platform
 from agent_v.hiddify.utils import charge_account, create_new_account
+from agent_v.seller.utils import PlanType
 from agent_v.telebot.models import Profile
 from config import settings
 
@@ -21,13 +22,21 @@ User = get_user_model()
 
 
 class PlanManager(models.QuerySet):
-    def get_basic(self):
-        return self.filter(is_active=True)
+    async def get_for_user(self, user):
+        from agent_v.users.models import RepresentativeCode
+
+        try:
+            rc = await RepresentativeCode.objects.aget(used_by=user)
+            plan_type = rc.plan_type
+        except RepresentativeCode.DoesNotExist:
+            plan_type = PlanType.DEFAULT
+        return self.filter(is_active=True, plan_type=plan_type)
 
 
 class Plan(models.Model):
     objects = PlanManager.as_manager()
 
+    plan_type = models.CharField(max_length=15, choices=PlanType.choices, default=PlanType.DEFAULT)
     price = models.PositiveIntegerField(verbose_name=_("قیمت (تومان)"))
     duration = models.PositiveBigIntegerField(verbose_name=_("مدت (ثانیه)"))
     volume = models.PositiveIntegerField(verbose_name=_("حجم (گیگابایت)"))
