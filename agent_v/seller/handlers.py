@@ -120,8 +120,9 @@ async def check_payment(update: CallbackQuery, data: DataType, bot: AsyncTeleBot
     """
     The callback in which user says they paid the payment
     """
+    user = data["user"]
     payment_id = update.data.split("/")[1]
-    payment = await Payment.objects.aget(pk=payment_id)
+    payment = await Payment.objects.aget(pk=payment_id, user=user)
     await sync_to_async(payment.pend_admin)(
         update.from_user.username, user_chat_id=update.message.chat.id, user_message_id=update.message.message_id
     )
