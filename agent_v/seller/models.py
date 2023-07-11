@@ -25,11 +25,11 @@ class PlanManager(models.QuerySet):
     async def get_for_user(self, user):
         from agent_v.users.models import RepresentativeCode
 
-        try:
-            rc = await RepresentativeCode.objects.aget(used_by=user)
+        plan_type = PlanType.DEFAULT
+        rc = await RepresentativeCode.objects.filter(used_by=user).order_by("pk").alast()
+        if rc is not None:
             plan_type = rc.plan_type
-        except RepresentativeCode.DoesNotExist:
-            plan_type = PlanType.DEFAULT
+
         return self.filter(is_active=True, plan_type=plan_type)
 
 

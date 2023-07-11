@@ -1,4 +1,5 @@
 import enum
+from typing import Optional
 
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
@@ -37,19 +38,19 @@ class CODE_NOT_VALID_REASON(str, enum.Enum):
 
 
 class RepresentativeCodeManager(models.Manager):
-    async def validate_code(self, code: str) -> (bool, CODE_NOT_VALID_REASON):
+    async def validate_code(self, code: str) -> (Optional["RepresentativeCode"], CODE_NOT_VALID_REASON):
         """
         If a code can be used or not and why
         """
         try:
             code_obj: RepresentativeCode = await self.aget(code=code)
         except self.model.DoesNotExist:
-            return False, CODE_NOT_VALID_REASON.NOT_FOUNT.value
+            return None, CODE_NOT_VALID_REASON.NOT_FOUNT.value
         if not code_obj.is_active:
-            return False, CODE_NOT_VALID_REASON.DEACTIVATED.value
+            return None, CODE_NOT_VALID_REASON.DEACTIVATED.value
         elif not await code_obj.has_capacity(code_obj.pk):
-            return False, CODE_NOT_VALID_REASON.CAPACITY.value
-        return True, None
+            return None, CODE_NOT_VALID_REASON.CAPACITY.value
+        return code_obj, None
 
     async def use_for(self, code: str, user):
         """

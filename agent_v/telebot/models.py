@@ -31,6 +31,9 @@ class ProfileManager(models.Manager):
         last_user_id = last_user.id if last_user else 0
         return f"{preferred_user_name}#{last_user_id+1}"
 
+    async def change_rc_code(self, user: User, rc_code: RepresentativeCode):
+        await rc_code.used_by.aadd(user)
+
 
 class Profile(models.Model):
     objects = ProfileManager()

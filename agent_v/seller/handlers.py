@@ -38,8 +38,8 @@ async def start(update: Message, data: DataType, bot: AsyncTeleBot) -> None:
                 "چند لحظه ...",
             )
             await asyncio.sleep(settings.VALIDATE_DELAY)  # to prevent brute force
-            is_valid, reason = await RepresentativeCode.objects.validate_code(code)
-            if not is_valid:
+            code_obj, reason = await RepresentativeCode.objects.validate_code(code)
+            if not code_obj:
                 await bot.send_message(
                     chat_id=update.chat.id,
                     text=f"با این لینک امکان دسترسی ندارید، {reason}",
@@ -59,6 +59,31 @@ async def start(update: Message, data: DataType, bot: AsyncTeleBot) -> None:
         text,
         reply_markup=markup,
         parse_mode="html",
+    )
+
+
+async def change_rc_code(update: Message, data: DataType, bot: AsyncTeleBot) -> None:
+    user = data["user"]
+    code = get_data_from_command(update.text, "change_rc_code").get("code", None)
+    if code is None:
+        await bot.send_message(update.chat.id, _("کدی دریافت نشد"))
+        return
+    await bot.send_message(
+        update.chat.id,
+        "چند لحظه ...",
+    )
+    await asyncio.sleep(settings.VALIDATE_DELAY)  # to prevent brute force
+    code_obj, reason = await RepresentativeCode.objects.validate_code(code)
+    if not code_obj:
+        await bot.send_message(
+            chat_id=update.chat.id,
+            text=f"با این لینک امکان تغییر ندارید، {reason}",
+        )
+        return
+    await Profile.objects.change_rc_code(user=user, rc_code=code_obj)
+    await bot.send_message(
+        chat_id=update.chat.id,
+        text="انجام شد",
     )
 
 
