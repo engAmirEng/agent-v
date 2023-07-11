@@ -64,6 +64,8 @@ async def start(update: Message, data: DataType, bot: AsyncTeleBot) -> None:
 
 async def change_rc_code(update: Message, data: DataType, bot: AsyncTeleBot) -> None:
     user = data["user"]
+    if user.is_anonymous:
+        return
     code = get_data_from_command(update.text, "change_rc_code").get("code", None)
     if code is None:
         await bot.send_message(update.chat.id, _("کدی دریافت نشد"))
@@ -90,6 +92,8 @@ async def change_rc_code(update: Message, data: DataType, bot: AsyncTeleBot) -> 
 async def get_plan(update: CallbackQuery, data: DataType, bot: AsyncTeleBot):
     """Attempt to acquire the desired plan"""
     user = data["user"]
+    if user.is_anonymous:
+        return
     plan_id = update.data.split("/")[1]
     plans = await Plan.objects.get_for_user(user=user)
     plan = await plans.filter(pk=plan_id).aget()
@@ -127,6 +131,8 @@ async def check_payment(update: CallbackQuery, data: DataType, bot: AsyncTeleBot
     The callback in which user says they paid the payment
     """
     user = data["user"]
+    if user.is_anonymous:
+        return
     payment_id = update.data.split("/")[1]
     payment = await Payment.objects.aget(pk=payment_id, user=user)
     await sync_to_async(payment.pend_admin)(
@@ -140,6 +146,8 @@ async def deliver_payment(update: CallbackQuery, data: DataType, bot: AsyncTeleB
     The callback when admin sees the sms
     """
     user = data["user"]
+    if user.is_anonymous:
+        return
     payment_id = update.data.split("/")[1]
     payment = await Payment.objects.aget(pk=payment_id)
     await sync_to_async(payment.set_done)(
@@ -153,6 +161,8 @@ async def dont_deliver_payment_yet(update: CallbackQuery, data: DataType, bot: A
     The callback when admin does not see the sms
     """
     user = data["user"]
+    if user.is_anonymous:
+        return
     payment_id = update.data.split("/")[1]
     payment = await Payment.objects.aget(pk=payment_id)
     await sync_to_async(payment.reject_by_admin)(
