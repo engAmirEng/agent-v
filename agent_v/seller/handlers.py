@@ -25,7 +25,7 @@ async def start(update: Message, data: DataType, bot: AsyncTeleBot) -> None:
     user = data["user"]
     if user.is_anonymous:
         if settings.ALLOW_NEW_UNKNOWN:
-            await Profile.objects.create_in_start_bot(
+            profile = await Profile.objects.create_in_start_bot(
                 username=update.from_user.username, bot_user_id=update.from_user.id
             )
         else:
@@ -45,9 +45,10 @@ async def start(update: Message, data: DataType, bot: AsyncTeleBot) -> None:
                     text=f"با این لینک امکان دسترسی ندارید، {reason}",
                 )
                 return
-            await Profile.objects.create_in_start_bot(
+            profile = await Profile.objects.create_in_start_bot(
                 username=update.from_user.username, bot_user_id=update.from_user.id, repr_code=code
             )
+        user = await User.objects.get(pk=profile.user_id)
 
     plans = await Plan.objects.get_for_user(user=user)
     markup = InlineKeyboardMarkup()
