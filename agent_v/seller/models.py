@@ -119,7 +119,7 @@ class Payment(models.Model):
         Contains side effects like notifying users, etc.
         The return value will be discarded.
         """
-        from agent_v.telebot.management.commands.telepoll import async_tb
+        from agent_v.telebot.apps import async_tb
 
         bot = async_tb()
 
@@ -146,7 +146,7 @@ class Payment(models.Model):
 
     @transition(field=status, source=[Status.PENDING_ADMIN, Status.ADMIN_REJECTED], target=Status.DONE.value)
     def set_done(self, user, user_chat_id: int, user_message_id: int):
-        from agent_v.telebot.management.commands.telepoll import async_tb
+        from agent_v.telebot.apps import async_tb
 
         bot = async_tb()
 
@@ -175,7 +175,7 @@ class Payment(models.Model):
 
     @transition(field=status, source=[Status.PENDING_ADMIN], target=Status.ADMIN_REJECTED.value)
     def reject_by_admin(self, user, user_chat_id: int, user_message_id: int):
-        from agent_v.telebot.management.commands.telepoll import async_tb
+        from agent_v.telebot.apps import async_tb
 
         bot = async_tb()
 
