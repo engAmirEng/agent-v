@@ -41,11 +41,6 @@ class RepresentativeCodeQuerySet(models.QuerySet):
     def an_used_by_count(self):
         return self.annotate(used_by_count=Count("used_by"))
 
-
-class RepresentativeCodeManager(models.Manager):
-    def get_queryset(self):
-        return RepresentativeCodeQuerySet(self.model, using=self._db)
-
     async def validate_code(self, code: str) -> (Optional["RepresentativeCode"], CODE_NOT_VALID_REASON):
         """
         If a code can be used or not and why
@@ -70,7 +65,7 @@ class RepresentativeCodeManager(models.Manager):
 
 
 class RepresentativeCode(models.Model):
-    objects = RepresentativeCodeManager()
+    objects = RepresentativeCodeQuerySet.as_manager()
 
     code = models.CharField(max_length=15, unique=True)
     capacity = models.PositiveSmallIntegerField(default=1)
