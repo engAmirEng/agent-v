@@ -14,7 +14,7 @@ class AdminTelebotHandler(logging.Handler):
             logger.warning(f"admin_chat_id is set to {admin_chat_id}, this means the {self} is deactivate")
 
     def emit(self, record: logging.LogRecord) -> None:
-        from agent_v.telebot.management.commands.telepoll import async_tb
+        from agent_v.telebot.apps import async_tb
 
         if not self.is_active:
             return
