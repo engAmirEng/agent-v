@@ -1,4 +1,5 @@
 import redis
+from asgiref.sync import async_to_sync
 from django.apps import AppConfig
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
@@ -47,6 +48,8 @@ def setup_tb():
     tb.middlewares.append(UserMiddleware())
     routes(tb)
     set_async_tb(tb)
+    bot_user = async_to_sync(tb.get_me)()
+    tb.cached_user = bot_user
 
 
 class TelebotConfig(AppConfig):
