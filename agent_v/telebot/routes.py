@@ -13,7 +13,7 @@ from agent_v.seller.handlers import (
     get_plan,
     start,
 )
-from agent_v.telebot.handlers import hello
+from agent_v.telebot.handlers import hello, log_error
 
 
 def regex_match(pattern: str):
@@ -32,3 +32,4 @@ def routes(tb: AsyncTeleBot):
     tb.callback_query_handler(regex_match(r"deliver_payment/(\d+)"))(deliver_payment),
     tb.callback_query_handler(regex_match(r"dont_deliver_payment_yet/(\d+)"))(dont_deliver_payment_yet),
     tb.message_handler(commands=["hello"])(hello),
+    tb.message_handler(commands=["log_error"])(log_error),
