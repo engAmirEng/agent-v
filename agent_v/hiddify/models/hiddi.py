@@ -9,6 +9,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 from django.db import models
+from django.utils import timezone
 
 
 class AdminUser(models.Model):
@@ -161,7 +162,7 @@ class HiddiUser(models.Model):
         return Decimal(self.usage_limit_gb) - Decimal(self.current_usage_gb)
 
     def get_expiry_time(self) -> date:
-        return self.start_date + timedelta(days=self.package_days)
+        return (self.start_date or timezone.now().date()) + timedelta(days=self.package_days)
 
 
 class UserDetail(models.Model):
