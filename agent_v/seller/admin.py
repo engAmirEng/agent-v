@@ -6,7 +6,7 @@ from agent_v.seller.models import CardToCardGate, Payment, Plan
 
 @admin.register(Plan)
 class PlanAdmin(admin.ModelAdmin):
-    list_display = ["title", "plan_type", "price", "volume", "duration", "is_active"]
+    list_display = ["title", "plan_type", "price", "volume", "duration", "is_one_time", "is_active"]
     list_editable = ["is_active"]
 
 

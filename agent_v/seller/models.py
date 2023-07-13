@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.humanize.templatetags import humanize
 from django.core.validators import MinLengthValidator, integer_validator
 from django.db import models
+from django.db.models import Exists, OuterRef
 from django.template.loader import get_template
 from django.utils.translation import gettext as __
 from django.utils.translation import gettext_lazy as _
@@ -29,8 +30,10 @@ class PlanManager(models.QuerySet):
         rc = await RepresentativeCode.objects.filter(used_by=user).order_by("pk").alast()
         if rc is not None:
             plan_type = rc.plan_type
-
-        return self.filter(is_active=True, plan_type=plan_type)
+        one_time_payments = Payment.objects.filter(
+            user=user, plan__is_one_time=True, status=Payment.Status.DONE, plan_id=OuterRef("pk")
+        )
+        return self.filter(is_active=True, plan_type=plan_type).filter(~Exists(one_time_payments))
 
 
 class Plan(models.Model):
@@ -41,6 +44,7 @@ class Plan(models.Model):
     duration = models.PositiveBigIntegerField(verbose_name=_("مدت (ثانیه)"))
     volume = models.PositiveIntegerField(verbose_name=_("حجم (گیگابایت)"))
     is_active = models.BooleanField(default=True)
+    is_one_time = models.BooleanField(default=False)
 
     @property
     def title(self):
@@ -86,7 +90,7 @@ class Payment(models.Model):
         ADMIN_REJECTED = "AR", _("رد توسط ادمین")
         DONE = "DO", _("انجام شده")
 
-    plan = models.ForeignKey("Plan", on_delete=models.PROTECT, verbose_name=_("پلن"))
+    plan = models.ForeignKey("Plan", on_delete=models.PROTECT, verbose_name=_("پلن"), related_name="plan_payments")
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, verbose_name=_("کاربر"))
     status = FSMField(max_length=4, choices=Status.choices, verbose_name=_("وضعیت"))
 
