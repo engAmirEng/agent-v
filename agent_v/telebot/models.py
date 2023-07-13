@@ -32,7 +32,7 @@ class ProfileManager(models.Manager):
         return f"{preferred_user_name}#{last_user_id+1}"
 
     async def change_rc_code(self, user: User, rc_code: RepresentativeCode):
-        perv = await RepresentativeCode.objects.aget(user=user)
+        perv = await RepresentativeCode.objects.aget(used_by=user)
         await perv.used_by.aremove(user)
         await rc_code.used_by.aadd(user)
 

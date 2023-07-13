@@ -23,32 +23,50 @@ class STATES(str, enum.Enum):
 
 async def start(update: Message, data: DataType, bot: AsyncTeleBot) -> None:
     user = data["user"]
-    if user.is_anonymous:
-        if settings.ALLOW_NEW_UNKNOWN:
-            profile = await Profile.objects.create_in_start_bot(
-                username=update.from_user.username, bot_user_id=update.from_user.id
-            )
-        else:
-            code = get_data_from_command(update.text, "start").get("code", None)
-            if code is None:
-                await bot.send_message(update.chat.id, _("برای عضویت نیاز به لینک عضویت میباشد"))
-                return
-            await bot.send_message(
-                update.chat.id,
-                "چند لحظه ...",
-            )
-            await asyncio.sleep(settings.VALIDATE_DELAY)  # to prevent brute force
-            code_obj, reason = await RepresentativeCode.objects.validate_code(code)
-            if not code_obj:
+    code = get_data_from_command(update.text, "start").get("code", None)
+    if code:
+        await bot.send_message(
+            update.chat.id,
+            "چند لحظه ...",
+        )
+        await asyncio.sleep(settings.VALIDATE_DELAY)  # to prevent brute force
+        code_obj, reason = await RepresentativeCode.objects.validate_code(code)
+        if not code_obj:
+            if user.is_authenticated:
+                await bot.send_message(
+                    chat_id=update.chat.id,
+                    text=f"با این لینک امکان تغییر ندارید، {reason}",
+                )
+            else:
                 await bot.send_message(
                     chat_id=update.chat.id,
                     text=f"با این لینک امکان دسترسی ندارید، {reason}",
                 )
+            return
+        else:
+            if user.is_authenticated:
+                await Profile.objects.change_rc_code(user=user, rc_code=code_obj)
+                await bot.send_message(
+                    chat_id=update.chat.id,
+                    text="نوع پلن شما تغییر یافت",
+                )
+            else:
+                profile = await Profile.objects.create_in_start_bot(
+                    username=update.from_user.username, bot_user_id=update.from_user.id, repr_code=code
+                )
+                user = await User.objects.aget(pk=profile.user_id)
+    else:
+        if not user.is_authenticated:
+            if settings.ALLOW_NEW_UNKNOWN:
+                profile = await Profile.objects.create_in_start_bot(
+                    username=update.from_user.username, bot_user_id=update.from_user.id
+                )
+                user = await User.objects.aget(pk=profile.user_id)
+
+            else:
+
+                await bot.send_message(update.chat.id, _("برای عضویت نیاز به لینک عضویت میباشد"))
                 return
-            profile = await Profile.objects.create_in_start_bot(
-                username=update.from_user.username, bot_user_id=update.from_user.id, repr_code=code
-            )
-        user = await User.objects.aget(pk=profile.user_id)
 
     plans = await Plan.objects.get_for_user(user=user)
     markup = InlineKeyboardMarkup()
@@ -60,33 +78,6 @@ async def start(update: Message, data: DataType, bot: AsyncTeleBot) -> None:
         text,
         reply_markup=markup,
         parse_mode="html",
-    )
-
-
-async def change_rc_code(update: Message, data: DataType, bot: AsyncTeleBot) -> None:
-    user = data["user"]
-    if user.is_anonymous:
-        return
-    code = get_data_from_command(update.text, "change_rc_code").get("code", None)
-    if code is None:
-        await bot.send_message(update.chat.id, _("کدی دریافت نشد"))
-        return
-    await bot.send_message(
-        update.chat.id,
-        "چند لحظه ...",
-    )
-    await asyncio.sleep(settings.VALIDATE_DELAY)  # to prevent brute force
-    code_obj, reason = await RepresentativeCode.objects.validate_code(code)
-    if not code_obj:
-        await bot.send_message(
-            chat_id=update.chat.id,
-            text=f"با این لینک امکان تغییر ندارید، {reason}",
-        )
-        return
-    await Profile.objects.change_rc_code(user=user, rc_code=code_obj)
-    await bot.send_message(
-        chat_id=update.chat.id,
-        text="انجام شد",
     )
 
 
