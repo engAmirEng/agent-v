@@ -64,7 +64,6 @@ async def start(update: Message, data: DataType, bot: AsyncTeleBot) -> None:
                 user = await User.objects.aget(pk=profile.user_id)
 
             else:
-
                 await bot.send_message(update.chat.id, _("برای عضویت نیاز به لینک عضویت میباشد"))
                 return
 

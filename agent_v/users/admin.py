@@ -38,8 +38,8 @@ class UserAdmin(auth_admin.UserAdmin):
 
 @admin.register(RepresentativeCode)
 class RepresentativeCodeAdmin(admin.ModelAdmin):
-    list_display = ["descriptions", "code_link", "capacity", "remained_cap"]
-    list_editable = ["capacity"]
+    list_display = ["descriptions", "code_link", "capacity", "remained_cap", "plan_type", "is_active"]
+    list_editable = ["capacity", "plan_type", "is_active"]
 
     def get_queryset(self, request: HttpRequest):
         qs = super().get_queryset(request)
