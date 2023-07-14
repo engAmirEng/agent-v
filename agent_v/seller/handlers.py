@@ -101,6 +101,7 @@ async def get_plan(update: CallbackQuery, data: DataType, bot: AsyncTeleBot):
     paid_buttom_txt = _("پرداخت کردم")
     text = get_template("seller/pay_off_text.html").render(
         {
+            "plan_title": plan.title,
             "identified_price": identified_price,
             "ctc_gate": ctc_gate,
             "paid_buttom_txt": paid_buttom_txt,

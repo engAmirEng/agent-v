@@ -35,6 +35,10 @@ class PlanManager(models.QuerySet):
         )
         return self.filter(is_active=True, plan_type=plan_type).filter(~Exists(one_time_payments))
 
+    async def get_current_active_for_user(self, user):
+        payment = await Payment.objects.filter(status=Payment.Status.DONE, user=user).select_related("plan").alast()
+        return payment.plan
+
 
 class Plan(models.Model):
     objects = PlanManager.as_manager()
@@ -174,10 +178,11 @@ class Payment(models.Model):
                 "plan_title": full_fetched_self.plan.title,
             }
         )
-        async_to_sync(bot.send_message)(
+        user_massage = async_to_sync(bot.send_message)(
             chat_id=full_fetched_self.user.user_botprofile.bot_user_id, text=text, parse_mode="html"
         )
-        async_to_sync(bot.edit_message_text)("اوکی شد", chat_id=user_chat_id, message_id=user_message_id)
+        text = get_template("seller/deliver_admin_text.html").render({"user_username": user_massage.chat.username})
+        async_to_sync(bot.edit_message_text)(text, chat_id=user_chat_id, message_id=user_message_id)
 
     @transition(field=status, source=[Status.PENDING_ADMIN], target=Status.ADMIN_REJECTED.value)
     def reject_by_admin(self, user, user_chat_id: int, user_message_id: int):
@@ -187,15 +192,22 @@ class Payment(models.Model):
 
         ctc_gate = async_to_sync(self.get_related_ctc_gate)()
         assert ctc_gate.admin_id == user.pk
-        async_to_sync(bot.send_message)(chat_id=self.user.user_botprofile.bot_user_id, text="ما که پولی ندیدیم")
+        identified_price = async_to_sync(Payment.objects.get_identified_rial_price)(self.pk)
+
+        text = get_template("seller/no_payment_recieved_user_text.html").render({"identified_price": identified_price})
+        user_message = async_to_sync(bot.send_message)(chat_id=self.user.user_botprofile.bot_user_id, text=text)
         keyboard = [
             [
                 InlineKeyboardButton(__("اوا، الان اومد"), callback_data=f"deliver_payment/{self.pk}"),
             ]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
+        user_username = user_message.chat.username
+        text = get_template("seller/no_payment_recieved_admin_text.html").render(
+            {"identified_price": identified_price, "user_username": user_username}
+        )
         async_to_sync(bot.edit_message_text)(
-            "بش گفتم", chat_id=user_chat_id, message_id=user_message_id, reply_markup=reply_markup
+            text, chat_id=user_chat_id, message_id=user_message_id, reply_markup=reply_markup
         )
 
     async def get_related_ctc_gate(self) -> "CardToCardGate":
