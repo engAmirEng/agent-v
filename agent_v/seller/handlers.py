@@ -37,7 +37,7 @@ async def start(update: Message, data: DataType, bot: AsyncTeleBot) -> None:
         await asyncio.sleep(settings.VALIDATE_DELAY)  # to prevent brute force
         code_obj, reason = await RepresentativeCode.objects.validate_code(code)
         if not code_obj:
-            if user.is_authenticated:
+            if not user.is_anonymous:
                 await bot.send_message(
                     chat_id=update.chat.id,
                     text=f"با این لینک امکان تغییر ندارید، {reason}",
@@ -49,7 +49,7 @@ async def start(update: Message, data: DataType, bot: AsyncTeleBot) -> None:
                 )
             return
         else:
-            if user.is_authenticated:
+            if not user.is_anonymous:
                 await Profile.objects.change_rc_code(user=user, rc_code=code_obj)
                 await bot.send_message(
                     chat_id=update.chat.id,
@@ -61,7 +61,7 @@ async def start(update: Message, data: DataType, bot: AsyncTeleBot) -> None:
                 )
                 user = await User.objects.aget(pk=profile.user_id)
     else:
-        if not user.is_authenticated:
+        if not not user.is_anonymous:
             if settings.ALLOW_NEW_UNKNOWN:
                 profile = await Profile.objects.create_in_start_bot(
                     username=update.from_user.username, bot_user_id=update.from_user.id
