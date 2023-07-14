@@ -69,10 +69,12 @@ class PaymentManager(models.Manager):
         payment = await self.model.objects.select_related("plan").aget(pk=payment_pk)
         pk = str(payment.pk)
         rpk = pk[::-1]
-        rial = str(payment.plan.price)
-        rrial = rial[::-1]
+        toman = str(payment.plan.price)
+        if toman == "0":
+            return "0"
+        rtoman = toman[::-1]
         rres = ""
-        for i, v in enumerate(rrial):
+        for i, v in enumerate(rtoman):
             if i + 1 > len(pk):
                 rres += v
                 continue
