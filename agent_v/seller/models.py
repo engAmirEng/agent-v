@@ -15,9 +15,10 @@ from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from agent_v.hiddify.models import Platform
 from agent_v.hiddify.utils import charge_account, create_new_account
-from agent_v.seller.utils import PlanType
 from agent_v.telebot.models import Profile
 from config import settings
+
+from .utils import PlanType
 
 User = get_user_model()
 

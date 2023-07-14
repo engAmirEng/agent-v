@@ -303,4 +303,5 @@ LOGGING = {
         },
     },
     "root": {"level": "DEBUG", "handlers": ["console", "file", "admin_telebot"]},
+    "loggers": {"news": {"handlers": ["admin_telebot"], "level": "DEBUG"}},
 }

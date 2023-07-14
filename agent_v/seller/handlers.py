@@ -1,5 +1,6 @@
 import asyncio
 import enum
+import logging
 
 from asgiref.sync import sync_to_async
 from django.conf import settings
@@ -16,6 +17,8 @@ from agent_v.users.models import RepresentativeCode
 
 User = get_user_model()
 
+news_logger = logging.getLogger("news")
+
 
 class STATES(str, enum.Enum):
     pass
@@ -23,6 +26,8 @@ class STATES(str, enum.Enum):
 
 async def start(update: Message, data: DataType, bot: AsyncTeleBot) -> None:
     user = data["user"]
+    if user.is_anonymous:
+        news_logger.info(f"new start by {update.from_user.username} with {update.text}")
     code = get_data_from_command(update.text, "start").get("code", None)
     if code:
         await bot.send_message(
