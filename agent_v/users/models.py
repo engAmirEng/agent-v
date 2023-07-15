@@ -47,7 +47,7 @@ class RepresentativeCodeQuerySet(models.QuerySet):
         """
         try:
             code_obj: RepresentativeCode = await self.aget(code=code)
-        except self.model.DoesNotExist:
+        except RepresentativeCode.DoesNotExist:
             return None, CODE_NOT_VALID_REASON.NOT_FOUNT.value
         if not code_obj.is_active:
             return None, CODE_NOT_VALID_REASON.DEACTIVATED.value
