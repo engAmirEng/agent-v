@@ -23,6 +23,16 @@ services:
       - '8000:8000'
     command: /start
 
+  telepoll:
+    <<: *django
+    image: agent_v_local_telepoll
+    container_name: agent_v_local_telepoll
+    depends_on:
+      - postgres
+      - redis
+    ports: [ ]
+    command: /start-celerybeat
+
   postgres:
     build:
       context: .
