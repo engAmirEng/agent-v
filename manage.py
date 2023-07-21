@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+# fmt: off
+from gevent import monkey; monkey.patch_all()  # isort:skip # noqa: E702
+# fmt: on
 import os
 import sys
 from pathlib import Path
