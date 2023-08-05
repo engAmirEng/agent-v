@@ -16,6 +16,7 @@ from agent_v.telebot.models import Profile
 from agent_v.telebot.utils import DataType, get_data_from_command
 from agent_v.users.models import RepresentativeCode
 
+from ..hiddify.models import HProfile, Platform
 from .models import Payment, Plan
 
 User = get_user_model()
@@ -96,11 +97,19 @@ async def profile(update: Message, data: DataType, bot: AsyncTeleBot) -> None:
         return
     expiry_jdate = jdatetime.date.fromgregorian(date=profile_data["expiry_date"])
 
+    h_profile = await HProfile.objects.aget(user=user)
+    url_getter = h_profile.get_subscriptions_url
     text = get_template("seller/profile_text.html").render(
         {
             "plan_title": profile_data["current_plan"].title,
             "remained_data": profile_data["remained_data"],
             "expiry_time": expiry_jdate,
+            "v2rayN": url_getter(Platform.V2RAY_N),
+            "V2RAY_N_DLL": settings.V2RAY_N_DLL,
+            "v2rayNG": url_getter(Platform.V2RAY_NG),
+            "V2RAY_NG_DLL": settings.V2RAY_NG_DLL,
+            "FairVPN": url_getter(Platform.FAIR_VPN),
+            "FAIR_VPN_DLL": settings.FAIR_VPN_DLL,
         }
     )
     await bot.send_message(update.chat.id, text)
