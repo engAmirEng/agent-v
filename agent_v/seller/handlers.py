@@ -112,7 +112,7 @@ async def profile(update: Message, data: DataType, bot: AsyncTeleBot) -> None:
             "FAIR_VPN_DLL": settings.FAIR_VPN_DLL,
         }
     )
-    await bot.send_message(update.chat.id, text)
+    await bot.send_message(update.chat.id, text, parse_mode="html")
 
 
 async def get_plan(update: CallbackQuery, data: DataType, bot: AsyncTeleBot):
