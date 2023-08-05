@@ -1,10 +1,11 @@
 import datetime
 from decimal import Decimal
-from typing import TypedDict
+from typing import TYPE_CHECKING, TypedDict
 
 from django.db import models
 
-from .models import Plan
+if TYPE_CHECKING:
+    from .models import Plan
 
 
 class PlanType(models.TextChoices):
@@ -16,6 +17,6 @@ class PlanType(models.TextChoices):
 
 
 class ProfileDataType(TypedDict):
-    current_plan: Plan
+    current_plan: "Plan"
     remained_data: Decimal
     expiry_date: datetime.date
