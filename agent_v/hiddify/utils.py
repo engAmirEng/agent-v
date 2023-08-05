@@ -7,7 +7,6 @@ from aiohttp import ClientTimeout
 from django.conf import settings
 from pyquery import PyQuery as pq
 
-from agent_v.seller.models import Plan
 from agent_v.seller.utils import ProfileDataType
 
 from .models import HiddiUser, HProfile
@@ -70,6 +69,8 @@ async def charge_account(hiddi_id: int, days: int, volume: int, comment: str):
 
 
 async def get_profile(user) -> Optional[ProfileDataType]:
+    from agent_v.seller.models import Plan
+
     try:
         h_profile = await HProfile.objects.aget(user=user)
     except HProfile.DoesNotExist:
