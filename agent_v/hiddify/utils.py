@@ -1,4 +1,5 @@
 import uuid
+from typing import Optional
 from urllib.parse import urlparse
 
 import aiohttp
@@ -6,7 +7,10 @@ from aiohttp import ClientTimeout
 from django.conf import settings
 from pyquery import PyQuery as pq
 
-from agent_v.hiddify.models import HProfile
+from agent_v.seller.models import Plan
+from agent_v.seller.utils import ProfileDataType
+
+from .models import HiddiUser, HProfile
 
 USER_BASE_URL = "admin/user/"
 NEW_USER = USER_BASE_URL + "new/"
@@ -63,3 +67,16 @@ async def charge_account(hiddi_id: int, days: int, volume: int, comment: str):
         ) as r:
             if r.status != 302:
                 raise Exception(r.status)
+
+
+async def get_profile(user) -> Optional[ProfileDataType]:
+    try:
+        h_profile = await HProfile.objects.aget(user=user)
+    except HProfile.DoesNotExist:
+        return None
+    hiddi_user = await HiddiUser.objects.using("hiddi").aget(uuid=str(h_profile.hiddi_uuid))
+
+    current_plan = await Plan.objects.get_current_active_for_user(user=user)
+    remained_data = hiddi_user.get_remained_data()
+    expiry_date = hiddi_user.get_expiry_time()
+    return {"current_plan": current_plan, "remained_data": remained_data, "expiry_date": expiry_date}

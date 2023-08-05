@@ -1,4 +1,10 @@
+import datetime
+from decimal import Decimal
+from typing import TypedDict
+
 from django.db import models
+
+from .models import Plan
 
 
 class PlanType(models.TextChoices):
@@ -7,3 +13,9 @@ class PlanType(models.TextChoices):
     TWO = "two", "two"
     THREE = "three", "three"
     FOUR = "four", "four"
+
+
+class ProfileDataType(TypedDict):
+    current_plan: Plan
+    remained_data: Decimal
+    expiry_date: datetime.date

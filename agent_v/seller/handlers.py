@@ -2,6 +2,7 @@ import asyncio
 import enum
 import logging
 
+import jdatetime
 from asgiref.sync import sync_to_async
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -10,10 +11,12 @@ from django.utils.translation import gettext as _
 from telebot.async_telebot import AsyncTeleBot
 from telebot.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
-from agent_v.seller.models import Payment, Plan
+from agent_v.hiddify.utils import get_profile
 from agent_v.telebot.models import Profile
 from agent_v.telebot.utils import DataType, get_data_from_command
 from agent_v.users.models import RepresentativeCode
+
+from .models import Payment, Plan
 
 User = get_user_model()
 
@@ -83,6 +86,24 @@ async def start(update: Message, data: DataType, bot: AsyncTeleBot) -> None:
         reply_markup=markup,
         parse_mode="html",
     )
+
+
+async def profile(update: Message, data: DataType, bot: AsyncTeleBot) -> None:
+    user = data["user"]
+    profile_data = await get_profile(user)
+    if profile_data is None:
+        await bot.send_message(update.chat.id, "شما هنوز خریدی از بات انجام نداده اید")
+        return
+    expiry_jdate = jdatetime.date.fromgregorian(date=profile_data["expiry_date"])
+
+    text = get_template("seller/profile_text.html").render(
+        {
+            "plan_title": profile_data["current_plan"].title,
+            "remained_data": profile_data["remained_data"],
+            "expiry_time": expiry_jdate,
+        }
+    )
+    await bot.send_message(update.chat.id, text)
 
 
 async def get_plan(update: CallbackQuery, data: DataType, bot: AsyncTeleBot):

@@ -4,8 +4,7 @@ from typing import Union
 from telebot.async_telebot import AsyncTeleBot
 from telebot.types import CallbackQuery, Message
 
-from agent_v.hiddify.handlers import profile
-from agent_v.seller.handlers import check_payment, deliver_payment, dont_deliver_payment_yet, get_plan, start
+from agent_v.seller.handlers import check_payment, deliver_payment, dont_deliver_payment_yet, get_plan, profile, start
 from agent_v.telebot.handlers import hello, log_error
 
 
