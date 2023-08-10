@@ -40,6 +40,15 @@ class PlanManager(models.QuerySet):
         payment = await Payment.objects.filter(status=Payment.Status.DONE, user=user).select_related("plan").alast()
         return payment.plan
 
+    async def create_custom(self, volume: int, duration: int, price: int) -> "Plan":
+        plan = Plan()
+        plan.plan_type = PlanType.CUSTOM
+        plan.volume = volume
+        plan.duration = duration
+        plan.price = price
+        await plan.asave()
+        return plan
+
 
 class Plan(models.Model):
     objects = PlanManager.as_manager()
@@ -65,6 +74,20 @@ class PaymentManager(models.Manager):
         payment.plan = plan
         payment.status = Payment.Status.PENDING
         await payment.asave()
+        return payment
+
+    async def new_manual(self, plan: Plan, user):
+        payment = self.model()
+        payment.user = user
+        payment.plan = plan
+        payment.status = Payment.Status.DONE
+        await payment.asave()
+        try:
+            await Payment.deliver(payment.pk)
+        except Exception as e:
+            payment.status = Payment.Status.PENDING_ADMIN
+            await payment.asave()
+            raise e
         return payment
 
     async def get_identified_rial_price(self, payment_pk):
