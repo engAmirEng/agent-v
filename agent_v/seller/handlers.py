@@ -208,7 +208,7 @@ async def dont_deliver_payment_yet(update: CallbackQuery, data: DataType, bot: A
 async def admin(update: Message, data: DataType, bot: AsyncTeleBot) -> None:
     user = data["user"]
     markup = InlineKeyboardMarkup()
-    if await sync_to_async(user.has_perm)("users.view_user"):
+    if user.has_perm("users.view_user"):
         add_plan_btn = InlineKeyboardButton("add payment", callback_data="search_users")
         markup.add(add_plan_btn, row_width=1)
     if not markup.keyboard:
@@ -224,7 +224,7 @@ async def admin(update: Message, data: DataType, bot: AsyncTeleBot) -> None:
 
 async def search_users(update: Union[CallbackQuery, Message], data: DataType, bot: AsyncTeleBot) -> None:
     user = data["user"]
-    if not await sync_to_async(user.has_perm)("users.view_user"):
+    if not user.has_perm("users.view_user"):
         news_logger.warning("try to access search_users without perm")
         return
     state = None
@@ -254,14 +254,14 @@ async def search_users(update: Union[CallbackQuery, Message], data: DataType, bo
 
 async def profile_action(update: CallbackQuery, data: DataType, bot: AsyncTeleBot):
     user = data["user"]
-    if not await sync_to_async(user.has_perm)("users.view_user"):
+    if not user.has_perm("users.view_user"):
         news_logger.warning("try to access profile_action without perm")
         return
     profile_id = update.data.split("/")[1]
     profile = await Profile.objects.select_related("user").aget(pk=profile_id)
     markup = InlineKeyboardMarkup()
     btns = []
-    if await sync_to_async(user.has_perm)("seller.add_payment"):
+    if user.has_perm("seller.add_payment"):
         btns.append(InlineKeyboardButton("manual payment", callback_data=f"manual_payment/{profile.pk}"))
     markup.add(*btns)
     await bot.edit_message_text(
@@ -274,7 +274,7 @@ async def profile_action(update: CallbackQuery, data: DataType, bot: AsyncTeleBo
 
 async def manual_payment(update: Union[CallbackQuery, Message], data: DataType, bot: AsyncTeleBot):
     user = data["user"]
-    if not await sync_to_async(user.has_perm)("seller.add_payment"):
+    if not user.has_perm("seller.add_payment"):
         news_logger.warning("try to access manual_payment without perm")
         return
     if type(update) == CallbackQuery:
