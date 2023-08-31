@@ -9,7 +9,6 @@ if TYPE_CHECKING:
 
 
 class PlanType(models.TextChoices):
-    CUSTOM = "cus", "custom"
     DEFAULT = "def", "default"
     ONE = "one", "one"
     TWO = "two", "two"
