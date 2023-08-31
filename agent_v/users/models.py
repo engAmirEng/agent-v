@@ -5,13 +5,26 @@ from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import UserManager as BaseUserManager
 from django.db import models
-from django.db.models import CharField, Count
+from django.db.models import CharField, Count, Q, QuerySet
 from django.utils.translation import gettext_lazy as _
 
 from agent_v.seller.utils import PlanType
 
 
+class UserQuerySet(QuerySet):
+    def an_successful_payment_count(self):
+        """
+        annotates with successful payment count related to the user
+        """
+        from agent_v.seller.models import Payment
+
+        return self.annotate(successful_payment_count=Count("payment", filter=Q(payment__status=Payment.Status.DONE)))
+
+
 class UserManager(BaseUserManager):
+    def get_queryset(self):
+        return UserQuerySet(self.model, using=self._db)
+
     async def get_by_user_bot_id(self, user_bot_id: int):
         return await User.objects.aget(user_botprofile__bot_user_id=user_bot_id)
 

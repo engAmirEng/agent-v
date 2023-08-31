@@ -32,14 +32,24 @@ class UserAdmin(auth_admin.UserAdmin):
         ),
         (_("Important dates"), {"fields": ("last_login", "date_joined")}),
     )
-    list_display = ["username", "name", "is_superuser"]
+    list_display = ["username", "successful_payment_count", "name", "is_superuser"]
     search_fields = ["name"]
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request).an_successful_payment_count()
+        return qs
+
+    @admin.display(ordering="successful_payment_count")
+    def successful_payment_count(self, user):
+        return user.successful_payment_count
 
 
 @admin.register(RepresentativeCode)
 class RepresentativeCodeAdmin(admin.ModelAdmin):
     list_display = ["descriptions", "code_link", "capacity", "remained_cap", "plan_type", "is_active"]
     list_editable = ["capacity", "plan_type", "is_active"]
+    list_filter = ["plan_type", "is_active"]
+    readonly_fields = ["used_by"]
 
     def get_queryset(self, request: HttpRequest):
         qs = super().get_queryset(request)

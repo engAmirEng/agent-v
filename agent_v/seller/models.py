@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.humanize.templatetags import humanize
 from django.core.validators import MinLengthValidator, integer_validator
 from django.db import models
-from django.db.models import Exists, OuterRef
+from django.db.models import Count, Exists, OuterRef, Q
 from django.template.loader import get_template
 from django.utils.translation import gettext as __
 from django.utils.translation import gettext_lazy as _
@@ -24,6 +24,12 @@ User = get_user_model()
 
 
 class PlanManager(models.QuerySet):
+    def an_used_count(self):
+        """
+        annotates with successful payments related to the plan
+        """
+        return self.annotate(used_count=Count("plan_payments", filter=Q(plan_payments__status=Payment.Status.DONE)))
+
     async def get_for_user(self, user):
         from agent_v.users.models import RepresentativeCode
 
