@@ -1,3 +1,4 @@
+import environ
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 
@@ -53,7 +54,7 @@ DEBUG_TOOLBAR_CONFIG = {
 
 if env.bool("SENTRY_ENABLE", default=False):
     sentry_sdk.init(
-        dsn=env.url("SENTRY_DSN"),
+        dsn=environ.urlunparse(env.url("SENTRY_DSN")),
         integrations=[DjangoIntegration()],
         # If you wish to associate users to errors (assuming you are using
         # django.contrib.auth) you may enable sending PII data.
