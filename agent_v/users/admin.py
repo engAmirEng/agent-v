@@ -2,7 +2,8 @@ from django.contrib import admin
 from django.contrib.auth import admin as auth_admin
 from django.contrib.auth import get_user_model
 from django.http import HttpRequest
-from django.utils.html import format_html
+from django.urls import reverse
+from django.utils.html import format_html, format_html_join
 from django.utils.translation import gettext_lazy as _
 
 from agent_v.users.forms import UserAdminChangeForm, UserAdminCreationForm
@@ -32,12 +33,22 @@ class UserAdmin(auth_admin.UserAdmin):
         ),
         (_("Important dates"), {"fields": ("last_login", "date_joined")}),
     )
-    list_display = ["username", "successful_payment_count", "name", "is_superuser"]
+    list_display = ["username", "successful_payment_count", "rcode", "name", "is_superuser"]
     search_fields = ["name"]
 
     def get_queryset(self, request):
-        qs = super().get_queryset(request).an_successful_payment_count()
+        qs = super().get_queryset(request).prefetch_related("user_rcodes").an_successful_payment_count()
         return qs
+
+    def rcode(self, user):
+        return format_html_join(
+            ", ",
+            "<a href='{}'>{}</a>",
+            (
+                (reverse("admin:users_representativecode_change", kwargs={"object_id": i.id}), i.descriptions)
+                for i in user.user_rcodes.all()
+            ),
+        )
 
     @admin.display(ordering="successful_payment_count")
     def successful_payment_count(self, user):
