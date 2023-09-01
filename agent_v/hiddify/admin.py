@@ -35,6 +35,6 @@ class HProfileAdmin(admin.ModelAdmin):
             i.save()
             changes_count += 1
         self.message_user(request, f"total is {queryset.count()}", messages.INFO)
-        self.message_user(request, f"{changes_count} are successful", messages.SUCCESS)
-        self.message_user(request, f"{same_count} are successful", messages.SUCCESS)
+        self.message_user(request, f"{changes_count} are changed", messages.SUCCESS)
+        self.message_user(request, f"{same_count} are not changed", messages.SUCCESS)
         self.message_user(request, f"{not_found_count} are not found", messages.ERROR)
