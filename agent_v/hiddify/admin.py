@@ -19,7 +19,8 @@ class HProfileAdmin(admin.ModelAdmin):
         """
         hiddify changes user_id without any reason, so we should keep data in sync
         """
-        successful_count = 0
+        changes_count = 0
+        same_count = 0
         not_found_count = 0
         for i in queryset:
             try:
@@ -27,9 +28,13 @@ class HProfileAdmin(admin.ModelAdmin):
             except HiddiUser.DoesNotExist:
                 not_found_count += 1
                 continue
+            if i.hiddi_id == hu.id:
+                same_count += 1
+                continue
             i.hiddi_id = hu.id
             i.save()
-            successful_count += 1
-        self.message_user(request, f"total is {queryset.count()}", messages.SUCCESS)
-        self.message_user(request, f"{successful_count} are successful", messages.SUCCESS)
+            changes_count += 1
+        self.message_user(request, f"total is {queryset.count()}", messages.INFO)
+        self.message_user(request, f"{changes_count} are successful", messages.SUCCESS)
+        self.message_user(request, f"{same_count} are successful", messages.SUCCESS)
         self.message_user(request, f"{not_found_count} are not found", messages.ERROR)
