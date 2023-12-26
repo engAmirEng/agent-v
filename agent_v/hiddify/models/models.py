@@ -28,7 +28,7 @@ class HProfile(models.Model):
     hiddi_id = models.PositiveIntegerField(unique=True)
 
     def get_subscriptions_url(self, platform: Platform):
-        base_url = f"{settings.HIDDIFY_URL}/{settings.HIDDIFY_SECRET}/{self.hiddi_uuid}"
+        base_url = f"{settings.HIDDIFY_SUB_URL}/{settings.HIDDIFY_SECRET}/{self.hiddi_uuid}"
         if platform == Platform.V2RAY_N or platform == Platform.V2RAY_NG:
             url = base_url + "/all.txt?name=usersCdn-MKH&asn=MKH&mode=new"
         elif platform == Platform.FAIR_VPN:
